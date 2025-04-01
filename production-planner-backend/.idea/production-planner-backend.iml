@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="WEB_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/app/." isTestSource="false" packagePrefix="App\" />
+      <sourceFolder url="file://$MODULE_DIR$/app/./controllers" isTestSource="false" packagePrefix="App\Controllers\" />
+      <sourceFolder url="file://$MODULE_DIR$/app/./dto" isTestSource="false" packagePrefix="App\DTO\" />
+      <sourceFolder url="file://$MODULE_DIR$/app/./models" isTestSource="false" packagePrefix="App\Models\" />
+      <sourceFolder url="file://$MODULE_DIR$/app/./services" isTestSource="false" packagePrefix="App\Services\" />
+      <excludeFolder url="file://$MODULE_DIR$/app/vendor/chillerlan/php-qrcode" />
+      <excludeFolder url="file://$MODULE_DIR$/app/vendor/chillerlan/php-settings-container" />
+      <excludeFolder url="file://$MODULE_DIR$/app/vendor/composer" />
+      <excludeFolder url="file://$MODULE_DIR$/app/vendor/firebase/php-jwt" />
+      <excludeFolder url="file://$MODULE_DIR$/app/vendor/steampixel/simple-php-router" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
