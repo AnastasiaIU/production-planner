@@ -11,7 +11,6 @@ async function initDropdown() {
     window.filterDropdown = filterDropdown;
 
     addClearDropdownOnClose();
-    await loadDropdownItems(dropdownItemsContainer);
     addOnClickEventToDropdownItems(dropdownItemsContainer, outputsList, planName);
 
     // Load a plan if it is provided
@@ -78,101 +77,6 @@ function addEventListenerToPlanForm(form, planName, outputsList) {
 
         form.classList.add('was-validated');
     });
-}
-
-/**
- * Sets up an event listener to clear the search input and reset the dropdown items when the dropdown is closed.
- */
-function addClearDropdownOnClose() {
-    const dropdown = document.getElementById('outputsDropdown');
-    const searchInput = document.getElementById('dropdownSearch');
-
-    // Add an event listener to clear the search input and reset the dropdown items when the dropdown is closed
-    dropdown.addEventListener("hide.bs.dropdown", () => {
-        if (searchInput) {
-            searchInput.value = '';
-            filterDropdown(); // Reset the dropdown items
-        }
-    });
-}
-
-/**
- * Retrieves all items under a given category element.
- *
- * @param {HTMLElement} category The category element whose items are to be retrieved.
- * @returns {HTMLElement[]} An array of item elements under the specified category.
- */
-function getCategoryItems(category) {
-    const categoryItems = [];
-    let nextElement = category.nextElementSibling;
-
-    // Collect all items under this category
-    while (nextElement && nextElement.tagName === 'LI') {
-        categoryItems.push(nextElement);
-        nextElement = nextElement.nextElementSibling;
-    }
-
-    return categoryItems;
-}
-
-/**
- * Determines the visibility of a dropdown item based on the search input.
- *
- * @param {HTMLElement} item The dropdown item element to check.
- * @param {string} input The search input string to filter the items.
- * @returns {boolean} True if the item is visible, false otherwise.
- */
-function getItemVisibility(item, input) {
-    const text = item.textContent || item.innerText;
-    const matchesFilter = text.toLowerCase().includes(input);
-    const isInOutputList = item.querySelector(".dropdown-item").style.display === 'none';
-    const isVisible = matchesFilter && !isInOutputList;
-
-    changeVisibility(item, isVisible);
-
-    return isVisible;
-}
-
-/**
- * Changes the visibility of an element based on the specified condition.
- *
- * @param {HTMLElement} element The element whose visibility is to be changed.
- * @param {boolean} isVisible Indicates if the element should be visible or hidden.
- */
-function changeVisibility(element, isVisible) {
-    if (isVisible) {
-        element.classList.remove('hide-element');
-        element.classList.add('show-element');
-    } else {
-        element.classList.remove('show-element');
-        element.classList.add('hide-element');
-    }
-}
-
-/**
- * Filters the dropdown items based on the search input and updates their visibility.
- * Also displays or hides a "no results found" message based on the search results.
- */
-function filterDropdown() {
-    const input = document.getElementById('dropdownSearch').value.toLowerCase();
-    const dropdownItemsContainer = document.getElementById('dropdownItems');
-    const categories = dropdownItemsContainer.querySelectorAll(".dropdown-header");
-    let hasResults = false;
-
-    categories.forEach((category) => {
-        const categoryItems = getCategoryItems(category);
-        let hasVisibleItems = false;
-
-        categoryItems.forEach((item) => {
-            if (getItemVisibility(item, input)) hasVisibleItems = true;
-        });
-
-        changeVisibility(category, hasVisibleItems);
-
-        if (hasVisibleItems) hasResults = true;
-    });
-
-    toggleNoResultsMessage(hasResults, dropdownItemsContainer);
 }
 
 /**
@@ -314,56 +218,4 @@ async function appendItemToOutputsList(dropdownElement, outputsList, dropdownCon
 
     addEventListenerToItemQuantity(listItem, dropdownContainer, itemId);
     addOnClickEventToRemoveBtn(listItem, dropdownContainer, itemId);
-}
-
-/**
- * Adds a category header element to the dropdown items container.
- *
- * @param {string} category The name of the category to be added as a header.
- * @param {HTMLElement} dropdownItemsContainer The container element for the dropdown items.
- */
-function addCategoryHeader(category, dropdownItemsContainer) {
-    const header = document.createElement('h6');
-    header.className = 'dropdown-header';
-    header.textContent = category;
-    dropdownItemsContainer.appendChild(header);
-}
-
-/**
- * Creates a dropdown item element and appends it to the dropdown items container.
- *
- * @param {Object} item The item object containing details for the dropdown item.
- * @param {HTMLElement} dropdownItemsContainer The container element for the dropdown items.
- */
-function createDropdownItem(item, dropdownItemsContainer) {
-    const li = document.createElement('li');
-    li.innerHTML = `
-                    <a class='dropdown-item' data-item-id="${item.id}">
-                        <img src="/assets/images/${item.icon_name}" alt='icon'
-                             class="list-item-image">
-                        ${item.display_name}
-                    </a>`;
-    dropdownItemsContainer.appendChild(li);
-}
-
-/**
- * Loads the dropdown items by fetching producible items from the API,
- * grouping and sorting them by category, and then creating and appending
- * the dropdown items to the dropdown items container.
- */
-async function loadDropdownItems(dropdownItemsContainer) {
-    const items = await fetchFromApi('/producibleItems');
-
-    if (!Array.isArray(items) || items.length === 0) return;
-
-    dropdownItemsContainer.innerHTML = '';
-    const groupedItems = groupAndSortItems(items);
-
-    for (const [category, items] of Object.entries(groupedItems)) {
-        addCategoryHeader(category, dropdownItemsContainer);
-
-        items.forEach((item) => {
-            createDropdownItem(item, dropdownItemsContainer);
-        });
-    }
 }

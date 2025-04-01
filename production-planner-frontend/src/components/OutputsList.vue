@@ -2,7 +2,7 @@
 
 import axios from "axios"
 import { API_ENDPOINTS } from "@/utils/config"
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 // The order in which categories should be displayed in the dropdown
 const categoryOrder = [
@@ -78,19 +78,55 @@ function groupAndSortItems() {
 
 function filterDropdown() {
     const categories = document.querySelectorAll(".dropdown-header")
+    let anyVisible = false
 
     categories.forEach((category) => {
         const categoryItems = getCategoryItems(category)
         let hasVisibleItems = false
 
         categoryItems.forEach((item) => {
-            if (getItemVisibility(item, dropdownSearch.toLowerCase())) hasVisibleItems = true
+            if (getItemVisibility(item)) hasVisibleItems = true
         })
 
         changeVisibility(category, hasVisibleItems)
 
-        hasNoElements.value = !hasVisibleItems
+        if (hasVisibleItems) anyVisible = true
     })
+
+    hasNoElements.value = !anyVisible
+}
+
+/**
+ * Determines the visibility of a dropdown item based on the search input.
+ *
+ * @param {HTMLElement} item The dropdown item element to check.
+ * @returns {boolean} True if the item is visible, false otherwise.
+ */
+function getItemVisibility(item) {
+    const text = item.textContent || item.innerText;
+    const matchesFilter = text.toLowerCase().includes(dropdownSearch.value.toLowerCase());
+    const isInOutputList = item.querySelector(".dropdown-item").style.display === 'none';
+    const isVisible = matchesFilter && !isInOutputList;
+
+    changeVisibility(item, isVisible);
+
+    return isVisible;
+}
+
+/**
+ * Changes the visibility of an element based on the specified condition.
+ *
+ * @param {HTMLElement} element The element whose visibility is to be changed.
+ * @param {boolean} isVisible Indicates if the element should be visible or hidden.
+ */
+function changeVisibility(element, isVisible) {
+    if (isVisible) {
+        element.classList.remove('hide-element');
+        element.classList.add('show-element');
+    } else {
+        element.classList.remove('show-element');
+        element.classList.add('hide-element');
+    }
 }
 
 /**
@@ -119,6 +155,19 @@ function getImageUrl(fileName) {
 onMounted(async () => {
     await getProducibleItems()
     groupAndSortItems()
+
+    const dropdown = document.getElementById('outputsDropdown')
+    dropdown.addEventListener("hide.bs.dropdown", () => {
+        if (dropdownSearch.value) {
+            dropdownSearch.value = ''
+            filterDropdown() // Reset the dropdown items
+        }
+    });
+})
+
+onBeforeUnmount(() => {
+    const dropdown = document.getElementById('outputsDropdown')
+    dropdown.removeEventListener('hide.bs.dropdown', filterDropdown)
 })
 
 </script>
@@ -126,8 +175,7 @@ onMounted(async () => {
 <template>
     <aside class="col-md-4 d-flex flex-column p-0">
         <section class="card d-flex flex-column flex-grow-1">
-            <div id="outputsDropdown" class="dropdown d-flex justify-content-between align-items-center p-2"
-                @hide.bs.dropdown="filterDropdown">
+            <div id="outputsDropdown" class="dropdown d-flex justify-content-between align-items-center p-2">
                 <p class="h5 m-0">Outputs</p>
                 <a id="addItemBtn" class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
@@ -137,7 +185,7 @@ onMounted(async () => {
                     <li>
                         <form class="px-3 py-2">
                             <input v-model="dropdownSearch" type="text" class="form-control"
-                                placeholder="Search items..." @keyup.up="filterDropdown" aria-label="Search items">
+                                placeholder="Search items..." @keyup="filterDropdown" aria-label="Search items">
                         </form>
                     </li>
                     <li>
@@ -157,7 +205,8 @@ onMounted(async () => {
                             <h6 class="dropdown-header">{{ category }}</h6>
                             <li v-for="item in items" :key="item.id">
                                 <a class="dropdown-item" :data-item-id="`${item.id}`">
-                                    <img :src="getImageUrl(item.icon_name)" alt="" class="list-item-image">{{ item.display_name }}
+                                    <img :src="getImageUrl(item.icon_name)" alt="" class="list-item-image">{{
+                                    item.display_name }}
                                 </a>
                             </li>
                         </div>
@@ -201,5 +250,13 @@ onMounted(async () => {
     height: 50px;
     width: 50px;
     margin-right: 10px;
+}
+
+.show-element {
+    display: block;
+}
+
+.hide-element {
+    display: none;
 }
 </style>
