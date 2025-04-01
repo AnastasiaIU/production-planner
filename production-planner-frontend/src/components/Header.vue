@@ -3,8 +3,8 @@ import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
 
 const nav_items = reactive([
-    { href: '/', name: 'Planner', class: 'nav-link active', aria_current: 'page' },
-    { href: '/plans', name: 'My Plans', class: 'nav-link', aria_current: '' }
+    { to: '/', name: 'Planner', class: 'nav-link active', aria_current: 'page' },
+    { to: '/plans', name: 'My Plans', class: 'nav-link', aria_current: '' }
 ])
 
 const router = useRouter()
@@ -20,7 +20,7 @@ function openPage(page) {
         }
     })
 
-    router.push(page.href)
+    router.push(page.to)
 }
 </script>
 
@@ -42,7 +42,7 @@ function openPage(page) {
                     <template v-for="nav_item in nav_items">
                         <li class="nav-item">
                             <router-link v-bind:class="nav_item.class" v-bind:aria-current="nav_item.aria_current"
-                                v-bind:to="nav_item.href" @click.prevent="openPage(nav_item)">
+                                v-bind:to="nav_item.to" @click.prevent="openPage(nav_item)">
                                 {{ nav_item.name }}
                             </router-link>
                         </li>

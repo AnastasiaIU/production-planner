@@ -1,19 +1,3 @@
-// The order in which categories should be displayed in the dropdown
-const categoryOrder = [
-    'Raw Resources',
-    'Tier 0',
-    'Tier 2',
-    'Tier 3',
-    'Tier 4',
-    'Tier 5',
-    'Tier 6',
-    'Tier 7',
-    'Tier 8',
-    'Tier 9',
-    'MAM',
-    'Equipment'
-];
-
 /**
  * Initializes the dropdown by exposing the filter function globally and adding necessary event listeners.
  */
@@ -162,29 +146,6 @@ function changeVisibility(element, isVisible) {
     } else {
         element.classList.remove('show-element');
         element.classList.add('hide-element');
-    }
-}
-
-/**
- * Displays or removes a "no results found" message based on the search results.
- *
- * @param {boolean} hasResults Indicates if there are any matching results.
- * @param {HTMLElement} dropdownItemsContainer The container element for the dropdown items.
- */
-function toggleNoResultsMessage(hasResults, dropdownItemsContainer) {
-    const noResultsMessage = document.getElementById('noResultsMessage');
-    if (!hasResults) {
-        if (!noResultsMessage) {
-            const message = document.createElement('div');
-            message.id = 'noResultsMessage';
-            message.className = 'text-center text-muted mt-2';
-            message.innerText = 'No results found.';
-            dropdownItemsContainer.appendChild(message);
-        }
-    } else {
-        if (noResultsMessage) {
-            noResultsMessage.remove();
-        }
     }
 }
 
@@ -405,44 +366,4 @@ async function loadDropdownItems(dropdownItemsContainer) {
             createDropdownItem(item, dropdownItemsContainer);
         });
     }
-}
-
-/**
- * Groups and sorts items by category and display order.
- *
- * @param {Object[]} items The array of items to be grouped and sorted.
- * @returns {Object} An object where keys are category names and values are arrays of items sorted by display order.
- */
-function groupAndSortItems(items) {
-    const groupedItems = {};
-
-    // Group items by category
-    items.forEach((item) => {
-        const category = item.category || 'Uncategorized';
-        if (!groupedItems[category]) groupedItems[category] = [];
-        groupedItems[category].push(item);
-    });
-
-    // Sort items within each category by display_order
-    for (const category in groupedItems) {
-        groupedItems[category].sort((a, b) => a.display_order - b.display_order);
-    }
-
-    // Sort the categories based on the custom order
-    const sortedGroupedItems = {};
-    categoryOrder.forEach((category) => {
-        if (groupedItems[category]) {
-            sortedGroupedItems[category] = groupedItems[category];
-        }
-    });
-
-    // Include any remaining categories not in categoryOrder at the end
-    Object.keys(groupedItems)
-        .filter((category) => !categoryOrder.includes(category))
-        .sort()
-        .forEach((remainingCategory) => {
-            sortedGroupedItems[remainingCategory] = groupedItems[remainingCategory];
-        });
-
-    return sortedGroupedItems;
 }

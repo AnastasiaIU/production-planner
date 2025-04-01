@@ -28,7 +28,13 @@
                 </label>
             </div>
             <button type="submit" class="btn btn-primary mb-3">Log in</button>
-            <p>Don't have an account? <a class="link-opacity-75-hover" href="/register">Sign up</a>.</p>
+            <p>Don't have an account?
+                <a class="link-opacity-75-hover">
+                    <router-link to="/register" @click.prevent="openPage()">
+                        Sign up
+                    </router-link>
+                </a>.
+            </p>
         </form>
     </section>
 </template>
