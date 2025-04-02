@@ -1,5 +1,8 @@
 export const API_BASE_URL = "http://localhost/api";
 
 export const API_ENDPOINTS = {
-  producibleItems: `${API_BASE_URL}/producible-items`,
+  getProducibleItems: `${API_BASE_URL}/producible-items`,
+  getItem: (itemId) => `${API_BASE_URL}/items/${itemId}`,
+  getRecipeForItem: (itemId) => `${API_ENDPOINTS.getItem(itemId)}/standard-recipe`,
+  getMachine: (machineId) => `${API_BASE_URL}/machines/${machineId}`
 };

@@ -32,7 +32,7 @@ class RecipeDTO implements JsonSerializable
     public function toArray(): array
     {
         return [
-            'id' => $this->id,
+            'recipe_id' => $this->id,
             'produced_in' => $this->produced_in,
             'display_name' => $this->display_name,
             'output' => $this->output,
@@ -51,7 +51,7 @@ class RecipeDTO implements JsonSerializable
     public static function fromArray(array $data, array $recipe_outputs, array $recipe_inputs): self
     {
         return new self(
-            $data['id'],
+            $data['recipe_id'],
             $data['produced_in'],
             $data['display_name'],
             $recipe_outputs,

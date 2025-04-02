@@ -3,6 +3,16 @@
 import axios from "axios"
 import { API_ENDPOINTS } from "@/utils/config"
 import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { Dropdown } from "@/utils/Dropdown.js"
+import { getImageUrl } from "@/utils/domHelper.js"
+
+const itemsRaw = ref({})
+const itemsGrouped = ref({})
+const isLoading = ref(true)
+const error = ref(null)
+const dropdownSearch = ref('')
+const hasNoElements = ref(false)
+const dropdown = new Dropdown()
 
 // The order in which categories should be displayed in the dropdown
 const categoryOrder = [
@@ -20,75 +30,37 @@ const categoryOrder = [
     'Equipment'
 ]
 
-const dropdownSearch = ref('')
-const hasNoElements = ref(false)
-const isLoading = ref(true)
-const error = ref(null)
-const producibleItemsRaw = ref({})
-const producibleItems = ref({})
+onMounted(async () => {
+    await fetchItems()
+    groupAndSortItems()
 
-async function getProducibleItems() {
-    try {
-        const results = await axios.get(API_ENDPOINTS.producibleItems)
-        producibleItemsRaw.value = results.data
-    } catch (error) {
-        console.error(error)
-        error.value = "An error occurred. Try to refresh the page."
-    } finally {
-        isLoading.value = false
-    }
-}
-
-/**
- * Groups and sorts producible items by category and display order.
- */
-function groupAndSortItems() {
-    const groupedItems = {}
-
-    // Group items by category
-    producibleItemsRaw.value.forEach((item) => {
-        const category = item.category || 'Uncategorized'
-        if (!groupedItems[category]) groupedItems[category] = []
-        groupedItems[category].push(item)
-    });
-
-    // Sort items within each category by display_order
-    for (const category in groupedItems) {
-        groupedItems[category].sort((a, b) => a.display_order - b.display_order)
-    }
-
-    // Sort the categories based on the custom order
-    const sortedGroupedItems = {};
-    categoryOrder.forEach((category) => {
-        if (groupedItems[category]) {
-            sortedGroupedItems[category] = groupedItems[category]
+    const dropdownElement = document.getElementById('outputsDropdown')
+    dropdownElement.addEventListener("hide.bs.dropdown", () => {
+        if (dropdownSearch.value) {
+            dropdownSearch.value = ''
+            filterDropdown() // Reset the dropdown items
         }
-    });
+    })
+})
 
-    // Include any remaining categories not in categoryOrder at the end
-    Object.keys(groupedItems)
-        .filter((category) => !categoryOrder.includes(category))
-        .sort()
-        .forEach((remainingCategory) => {
-            sortedGroupedItems[remainingCategory] = groupedItems[remainingCategory]
-        });
-
-    producibleItems.value = sortedGroupedItems
-}
+onBeforeUnmount(() => {
+    const dropdownElement = document.getElementById('outputsDropdown')
+    dropdownElement.removeEventListener('hide.bs.dropdown', filterDropdown)
+})
 
 function filterDropdown() {
     const categories = document.querySelectorAll(".dropdown-header")
     let anyVisible = false
 
     categories.forEach((category) => {
-        const categoryItems = getCategoryItems(category)
+        const categoryItems = dropdown.getCategoryItems(category)
         let hasVisibleItems = false
 
         categoryItems.forEach((item) => {
-            if (getItemVisibility(item)) hasVisibleItems = true
+            if (dropdown.getItemVisibility(item, dropdownSearch.value)) hasVisibleItems = true
         })
 
-        changeVisibility(category, hasVisibleItems)
+        dropdown.changeVisibility(category, hasVisibleItems)
 
         if (hasVisibleItems) anyVisible = true
     })
@@ -96,79 +68,51 @@ function filterDropdown() {
     hasNoElements.value = !anyVisible
 }
 
-/**
- * Determines the visibility of a dropdown item based on the search input.
- *
- * @param {HTMLElement} item The dropdown item element to check.
- * @returns {boolean} True if the item is visible, false otherwise.
- */
-function getItemVisibility(item) {
-    const text = item.textContent || item.innerText;
-    const matchesFilter = text.toLowerCase().includes(dropdownSearch.value.toLowerCase());
-    const isInOutputList = item.querySelector(".dropdown-item").style.display === 'none';
-    const isVisible = matchesFilter && !isInOutputList;
-
-    changeVisibility(item, isVisible);
-
-    return isVisible;
-}
-
-/**
- * Changes the visibility of an element based on the specified condition.
- *
- * @param {HTMLElement} element The element whose visibility is to be changed.
- * @param {boolean} isVisible Indicates if the element should be visible or hidden.
- */
-function changeVisibility(element, isVisible) {
-    if (isVisible) {
-        element.classList.remove('hide-element');
-        element.classList.add('show-element');
-    } else {
-        element.classList.remove('show-element');
-        element.classList.add('hide-element');
+async function fetchItems() {
+    try {
+        const response = await axios.get(API_ENDPOINTS.getProducibleItems)
+        itemsRaw.value = response.data
+    } catch (e) {
+        console.error('Error fetching items:', e)
+        error.value = 'Failed to load items.'
+    } finally {
+        isLoading.value = false
     }
 }
 
-/**
- * Retrieves all items under a given category element.
- *
- * @param {HTMLElement} category The category element whose items are to be retrieved.
- * @returns {HTMLElement[]} An array of item elements under the specified category.
- */
-function getCategoryItems(category) {
-    const categoryItems = [];
-    let nextElement = category.nextElementSibling;
+function groupAndSortItems() {
+    const groupedItems = {}
 
-    // Collect all items under this category
-    while (nextElement && nextElement.tagName === 'LI') {
-        categoryItems.push(nextElement);
-        nextElement = nextElement.nextElementSibling;
+    // Group items by category
+    itemsRaw.value.forEach((item) => {
+        const category = item.category || 'Uncategorized'
+        if (!groupedItems[category]) groupedItems[category] = []
+        groupedItems[category].push(item)
+    })
+
+    // Sort items within each category by display_order
+    for (const category in groupedItems) {
+        groupedItems[category].sort((a, b) => a.display_order - b.display_order)
     }
 
-    return categoryItems;
-}
-
-function getImageUrl(fileName) {
-    return new URL(`../assets/images/${fileName}`, import.meta.url).href
-}
-
-onMounted(async () => {
-    await getProducibleItems()
-    groupAndSortItems()
-
-    const dropdown = document.getElementById('outputsDropdown')
-    dropdown.addEventListener("hide.bs.dropdown", () => {
-        if (dropdownSearch.value) {
-            dropdownSearch.value = ''
-            filterDropdown() // Reset the dropdown items
+    // Sort the categories based on the custom order
+    const sortedGroupedItems = {}
+    categoryOrder.forEach((category) => {
+        if (groupedItems[category]) {
+            sortedGroupedItems[category] = groupedItems[category]
         }
-    });
-})
+    })
 
-onBeforeUnmount(() => {
-    const dropdown = document.getElementById('outputsDropdown')
-    dropdown.removeEventListener('hide.bs.dropdown', filterDropdown)
-})
+    // Include any remaining categories not in categoryOrder at the end
+    Object.keys(groupedItems)
+        .filter((category) => !categoryOrder.includes(category))
+        .sort()
+        .forEach((remainingCategory) => {
+            sortedGroupedItems[remainingCategory] = groupedItems[remainingCategory]
+        })
+
+    itemsGrouped.value = sortedGroupedItems
+}
 
 </script>
 
@@ -201,12 +145,12 @@ onBeforeUnmount(() => {
                         <div v-if="hasNoElements" class="text-center text-muted mt-2">
                             <p>No results found.</p>
                         </div>
-                        <div v-for="items, category in producibleItems" :key="category[0]">
+                        <div v-for="items, category in itemsGrouped" :key="category[0]">
                             <h6 class="dropdown-header">{{ category }}</h6>
-                            <li v-for="item in items" :key="item.id">
+                            <li v-for="item in items" :key="item.id" @click="dropdown.appendItemToOutputsList">
                                 <a class="dropdown-item" :data-item-id="`${item.id}`">
                                     <img :src="getImageUrl(item.icon_name)" alt="" class="list-item-image">{{
-                                    item.display_name }}
+                                        item.display_name }}
                                 </a>
                             </li>
                         </div>
@@ -233,7 +177,7 @@ onBeforeUnmount(() => {
     </aside>
 </template>
 
-<style scoped>
+<style>
 .dropdown-menu {
     max-height: 45vh;
 }
@@ -258,5 +202,9 @@ onBeforeUnmount(() => {
 
 .hide-element {
     display: none;
+}
+
+.quantity-input {
+    width: 120px;
 }
 </style>
