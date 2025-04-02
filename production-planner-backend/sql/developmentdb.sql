@@ -2,11 +2,13 @@ CREATE TABLE `USER`
 (
     id       INT AUTO_INCREMENT PRIMARY KEY,
     email    VARCHAR(254) NOT NULL UNIQUE,
-    password VARCHAR(64)  NOT NULL
+    password VARCHAR(64)  NOT NULL,
+    role     ENUM('Admin', 'Regular') DEFAULT 'Regular'
 );
 
-INSERT INTO `USER` (email, password)
-VALUES ('123@mail.com', "$2y$10$NzoIUBMmj7W846DDMMUzuOpvndoBHuSzs805NXczXJbVykII73MTy");
+INSERT INTO `USER` (email, password, role)
+VALUES ('123@mail.com', "$2y$12$IVDZrZ24jEO0uDlCUVQTReN7V6yW8pP4A7B1Kmbnn4e9hzAMvvQUK", 'Regular'),
+        ('123admin@mail.com', "$2y$12$IVDZrZ24jEO0uDlCUVQTReN7V6yW8pP4A7B1Kmbnn4e9hzAMvvQUK", 'Admin');
 
 CREATE TABLE `MACHINE`
 (

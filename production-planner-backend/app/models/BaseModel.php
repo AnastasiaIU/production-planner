@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use App\Services\ErrorHandler;
+use App\Services\ResponseService;
 use PDO;
 use PDOException;
 
@@ -32,7 +32,8 @@ abstract class BaseModel
 
                 self::$pdo = new PDO($dsn, $user, $pass, $options);
             } catch (PDOException $e) {
-                ErrorHandler::handleException($e);
+                error_log($e->getMessage());
+                ResponseService::Error($e->getMessage());
             }
         }
     }

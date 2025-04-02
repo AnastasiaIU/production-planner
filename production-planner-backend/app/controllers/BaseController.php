@@ -8,7 +8,7 @@ use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Throwable;
 
-class Controller
+class BaseController
 {
     // ensures all expected fields are set in data object and sends a bad request response if not
     // used to make sure all expected $_POST fields are at least set, additional validation may still need to be set
@@ -17,6 +17,7 @@ class Controller
         foreach ($expectedFields as $field) {
             if (!isset($data[$field])) {
                 ResponseService::Send("Required field: $field, is missing", 400);
+                error_log("Required field: $field, is missing");
                 exit();
             }
         }
@@ -29,6 +30,7 @@ class Controller
             return json_decode(file_get_contents('php://input'), true);
         } catch (Throwable $th) {
             ResponseService::Error("error decoding JSON in request body", 400);
+            error_log($th->getMessage());
         }
     }
 

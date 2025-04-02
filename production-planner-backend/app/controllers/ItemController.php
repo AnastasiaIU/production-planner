@@ -10,7 +10,7 @@ use Throwable;
 /**
  * Controller class for handling item-related operations.
  */
-class ItemController extends Controller
+class ItemController extends BaseController
 {
     protected const string INITIAL_DATASET = __DIR__ . '/../assets/datasets/en-GB.json';
     private ItemModel $itemModel;

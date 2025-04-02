@@ -9,7 +9,7 @@ require_once __DIR__ . '/../vendor/autoload.php';
 // Set env variables
 require_once(__DIR__ . "/../env.php");
 
-// Set env variables
+// Populates the database with data from the game developers' JSON file if database tables are empty
 require_once(__DIR__ . "/../services/populate-db.php");
 
 // require local classes
@@ -17,7 +17,6 @@ use App\Controllers\ItemController;
 use App\Controllers\MachineController;
 use App\Controllers\PlanController;
 use App\Controllers\RecipeController;
-use App\Controllers\UserController;
 use App\Services\AuthHandler;
 use App\Services\ErrorReportingService;
 use App\Services\ResponseService;
@@ -55,7 +54,6 @@ try {
         $authController->me();
     });
 
-    // update article by id
     Route::add('/auth/is-me/([0-9]*)', function ($id) {
         $authController = new AuthController();
         $authController->isMe($id);

@@ -7,6 +7,12 @@ import { createPinia } from 'pinia'
 
 const app = createApp(App)
 
+// Initialize auth token if it exists
+const token = getAuthToken();
+if (token) {
+  setAuthToken(token);
+}
+
 app.use(router)
 app.use(createPinia())
 

@@ -2,12 +2,14 @@
 
 namespace App\Controllers;
 
+use App\enums\Role;
 use App\Models\UserModel;
 use App\Services\ResponseService;
-use Exception;
 use Firebase\JWT\JWT;
+use InvalidArgumentException;
+use Throwable;
 
-class AuthController extends Controller
+class AuthController extends BaseController
 {
     private UserModel $userModel;
 
@@ -21,20 +23,38 @@ class AuthController extends Controller
         $data = $this->decodePostData(); // Use base controller method to get POST data
         $this->validateInput(['email', 'password'], $data); // Use base controller validation
 
-        // Check if email already exists
-        if ($this->userModel->findByEmail($data['email'])) {
-            ResponseService::Error('Email already exists', 400);
-            return;
-        }
-
-        // create user
         try {
-            $this->userModel->create($data['email'], $data['password']);
+            // Validate email format
+            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+                throw new InvalidArgumentException('Invalid email format');
+            }
+
+            // Additional validation for email length and domain
+            if (strlen($data['email']) > 254) {
+                throw new InvalidArgumentException('Email is too long');
+            }
+
+            // Extract domain and validate
+            $domain = substr(strrchr($data['email'], "@"), 1);
+            if (!checkdnsrr($domain)) {
+                throw new InvalidArgumentException('Invalid email domain');
+            }
+
+            // Check if email already exists
+            if ($this->userModel->findByEmail($data['email'])) {
+                ResponseService::Error('Email already exists', 400);
+                return;
+            }
+
+            // create user
+            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+            $role = isset($data['role']) ? Role::from($data['role']) : Role::REGULAR; // Default to 'Regular' if role is not provided
+            $this->userModel->create($data['email'], $hashedPassword, $role);
             ResponseService::Send(['message' => 'User registered successfully']);
             return;
-        } catch (Exception $e) {
-            var_dump($e);
-            ResponseService::Error('Registration failed', 500);
+        } catch (Throwable $th) {
+            error_log($th->getMessage());
+            ResponseService::Error('Registration failed');
             return;
         }
     }
@@ -52,7 +72,7 @@ class AuthController extends Controller
 
         // Check if user exists and password matches
         // password_verify securely compares the provided password against the stored hash
-        if (!$user || !password_verify($data['password'], $user['password'])) {
+        if (!$user || !$user->verifyPassword($data['password'])) {
             ResponseService::Error('Invalid credentials', 401);
             return;
         }
@@ -78,8 +98,8 @@ class AuthController extends Controller
             'iat' => $issuedAt,
             'exp' => $expire,
             'user' => [
-                'id' => $user['id'],
-                'email' => $user['email']
+                'id' => $user->getId(),
+                'email' => $user->getEmail()
             ]
         ];
 

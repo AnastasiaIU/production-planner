@@ -2,6 +2,8 @@
 
 namespace App\DTO;
 
+use App\enums\Role;
+
 /**
  * Data Transfer Object (DTO) for representing a user.
  */
@@ -10,12 +12,23 @@ class UserDTO
     private string $id;
     private string $email;
     private string $password;
+    private Role $role;
 
-    public function __construct(string $id, string $email, string $password)
+    public function __construct(string $id, string $email, string $password, Role $role)
     {
         $this->id = $id;
         $this->email = $email;
         $this->password = $password;
+        $this->role = $role;
+    }
+
+    // Getters
+    public function getId(): int {
+        return $this->id;
+    }
+
+    public function getEmail(): string {
+        return $this->email;
     }
 
     /**
@@ -29,7 +42,8 @@ class UserDTO
         return new self(
             $data['id'],
             $data['email'],
-            $data['password']
+            $data['password'],
+            Role::from($data['role'])
         );
     }
 

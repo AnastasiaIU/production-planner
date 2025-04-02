@@ -9,7 +9,7 @@ use Throwable;
 /**
  * Controller class for handling production plan-related operations.
  */
-class PlanController extends Controller
+class PlanController extends BaseController
 {
     private PlanModel $planModel;
 

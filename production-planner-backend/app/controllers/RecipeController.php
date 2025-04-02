@@ -10,7 +10,7 @@ use Throwable;
 /**
  * Controller class for handling recipe-related operations.
  */
-class RecipeController extends Controller
+class RecipeController extends BaseController
 {
     protected const string INITIAL_DATASET = __DIR__ . '/../assets/datasets/en-GB.json';
     private RecipeModel $recipeModel;

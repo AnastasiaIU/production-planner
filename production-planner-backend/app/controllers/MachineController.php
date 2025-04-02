@@ -10,7 +10,7 @@ use Throwable;
 /**
  * Controller class for handling machine-related operations.
  */
-class MachineController extends Controller
+class MachineController extends BaseController
 {
     protected const string INITIAL_DATASET = __DIR__ . '/../assets/datasets/en-GB.json';
     private MachineModel $machineModel;
