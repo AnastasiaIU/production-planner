@@ -1,3 +1,9 @@
+<script setup>
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+</script>
+
 <template>
     <section class="card col-md-6 col-lg-5 col-xl-4 p-4 m-4">
         <form class="d-flex flex-column gap-2 needs-validation" id="loginForm" method="post" novalidate>
@@ -30,7 +36,7 @@
             <button type="submit" class="btn btn-primary mb-3">Log in</button>
             <p>Don't have an account?
                 <a class="link-opacity-75-hover">
-                    <router-link to="/register" @click.prevent="openPage()">
+                    <router-link to="/register" @click.prevent="router.push(`/register`)">
                         Sign up
                     </router-link>
                 </a>.

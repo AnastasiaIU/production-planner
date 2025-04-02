@@ -39,22 +39,22 @@ try {
     /**
      * Auth routes
      */
-    Route::add('/auth/register', function () {
+    Route::add('/api/auth/register', function () {
         $authController = new AuthController();
         $authController->register();
     }, ["post"]);
 
-    Route::add('/auth/login', function () {
+    Route::add('/api/auth/login', function () {
         $authController = new AuthController();
         $authController->login();
     }, ["post"]);
 
-    Route::add('/auth/me', function () {
+    Route::add('/api/auth/me', function () {
         $authController = new AuthController();
         $authController->me();
     });
 
-    Route::add('/auth/is-me/([0-9]*)', function ($id) {
+    Route::add('/api/auth/is-me/([0-9]*)', function ($id) {
         $authController = new AuthController();
         $authController->isMe($id);
     });

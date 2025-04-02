@@ -4,5 +4,7 @@ export const API_ENDPOINTS = {
   getProducibleItems: `${API_BASE_URL}/producible-items`,
   getItem: (itemId) => `${API_BASE_URL}/items/${itemId}`,
   getRecipeForItem: (itemId) => `${API_ENDPOINTS.getItem(itemId)}/standard-recipe`,
-  getMachine: (machineId) => `${API_BASE_URL}/machines/${machineId}`
+  getMachine: (machineId) => `${API_BASE_URL}/machines/${machineId}`,
+  login: `${API_BASE_URL}/auth/login`,
+  register: `${API_BASE_URL}/auth/register`
 };

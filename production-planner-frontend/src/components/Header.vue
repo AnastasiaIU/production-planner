@@ -9,9 +9,9 @@ const nav_items = reactive([
 
 const router = useRouter()
 
-function openPage(page) {
+function openPage(path) {
     nav_items.forEach(item => {
-        if (item == page) {
+        if (item.to === path) {
             item.class = 'nav-link active'
             item.aria_current = 'page'
         } else {
@@ -20,14 +20,14 @@ function openPage(page) {
         }
     })
 
-    router.push(page.to)
+    router.push(path)
 }
 </script>
 
 <template>
     <nav class="navbar nav-underline navbar-expand-lg justify-content-end" data-bs-theme="dark">
         <div class="container-fluid">
-            <router-link class="navbar-brand text-white" to="/" @click.prevent="openPage(nav_items[0])">
+            <router-link class="navbar-brand text-white" to="/" @click.prevent="openPage(`/`)">
                 <img src="/src/assets/images/ficsit-checkmarktm_64.png" class="img-fluid logo me-1"
                     alt="Logo FICSIT Checkmark">
                 <span class="h5 align-middle">Production Planner</span>
@@ -42,14 +42,14 @@ function openPage(page) {
                     <template v-for="nav_item in nav_items">
                         <li class="nav-item">
                             <router-link v-bind:class="nav_item.class" v-bind:aria-current="nav_item.aria_current"
-                                v-bind:to="nav_item.to" @click.prevent="openPage(nav_item)">
+                                v-bind:to="nav_item.to" @click.prevent="openPage(nav_item.to)">
                                 {{ nav_item.name }}
                             </router-link>
                         </li>
                     </template>
                 </ul>
                 <div>
-                    <router-link type="button" class="btn btn-primary" to="/login" @click.prevent="openPage()">
+                    <router-link type="button" class="btn btn-primary" to="/login" @click.prevent="openPage(`/login`)">
                         Log in
                     </router-link>
                 </div>
