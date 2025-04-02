@@ -115,9 +115,7 @@ async function handleSubmittion() {
                     <label for="inputEmail">Email address</label>
                     <input v-model="email" type="email" name="email" class="form-control" id="inputEmail"
                         aria-describedby="emailHelp" placeholder="Enter email" @keyup="resetValidation" required>
-                    <div class="invalid-feedback" id="inputEmailPrompt">
-                        {{ emailPrompt }}
-                    </div>
+                    <div class="invalid-feedback" id="inputEmailPrompt">{{ emailPrompt }}</div>
                 </div>
                 <div class="form-group">
                     <label for="inputPassword">Password</label>
@@ -128,17 +126,13 @@ async function handleSubmittion() {
                     <label for="inputConfirmPassword">Confirm password</label>
                     <input v-model="confirmPassword" :type="passwordType" name="confirmPassword" class="form-control"
                         id="inputConfirmPassword" placeholder="Confirm password" @keyup="resetValidation" required>
-                    <div class="invalid-feedback" id="confirmPasswordPrompt">
-                        {{ passwordPrompt }}
-                    </div>
+                    <div class="invalid-feedback" id="confirmPasswordPrompt">{{ passwordPrompt }}</div>
                 </div>
             </div>
             <div class="d-flex align-items-center mb-4">
                 <input class="checkbox me-2" type="checkbox" value="" id="showPasswordCheck"
                     @change="showPassword($event)">
-                <label class="" for="showPasswordCheck">
-                    Show passwords
-                </label>
+                <label class="" for="showPasswordCheck">Show passwords</label>
             </div>
             <button type="submit" class="btn btn-primary mb-3" id="registerBtn">Register</button>
         </form>
