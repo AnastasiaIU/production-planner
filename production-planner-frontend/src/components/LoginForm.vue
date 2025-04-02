@@ -3,13 +3,12 @@
 import { useRouter } from 'vue-router'
 import { ref } from 'vue'
 import { useLoginStore } from '@/stores/login'
-import { API_ENDPOINTS } from '@/utils/config'
-import axios from "axios"
-import { setAuthToken } from "@/utils/auth"
+import { useAuthStore } from "@/stores/auth"
 import { onMounted } from 'vue'
 
 const router = useRouter()
 const loginStore = useLoginStore()
+const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const emailPrompt = ref('Email cannot be empty.')
@@ -87,13 +86,7 @@ async function handleSubmittion() {
             return
         }
 
-        const response = await axios.post(API_ENDPOINTS.login, {
-            email: email.value,
-            password: password.value
-        })
-
-        localStorage.setItem('token', response.data.token)
-        setAuthToken(response.data.token)
+        await authStore.login({ email: email.value, password: password.value })
 
         router.push('/plans')
 

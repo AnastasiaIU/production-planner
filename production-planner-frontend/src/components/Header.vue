@@ -1,6 +1,7 @@
 <script setup>
 import { reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from "@/stores/auth"
 
 const nav_items = reactive([
     { to: '/', name: 'Planner', class: 'nav-link active', aria_current: 'page' },
@@ -8,6 +9,7 @@ const nav_items = reactive([
 ])
 
 const router = useRouter()
+const authStore = useAuthStore()
 
 function openPage(path) {
     nav_items.forEach(item => {
@@ -21,6 +23,11 @@ function openPage(path) {
     })
 
     router.push(path)
+}
+
+function handleLogout() {
+    authStore.logout()
+    router.push('/login')
 }
 </script>
 
@@ -40,7 +47,7 @@ function openPage(path) {
             <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
                 <ul class="navbar-nav mb-2 mb-lg-0 mx-3 gap-2">
                     <template v-for="nav_item in nav_items">
-                        <li class="nav-item">
+                        <li class="nav-item" v-if="nav_item.name !== 'My Plans' || authStore.isAuthenticated">
                             <router-link v-bind:class="nav_item.class" v-bind:aria-current="nav_item.aria_current"
                                 v-bind:to="nav_item.to" @click.prevent="openPage(nav_item.to)">
                                 {{ nav_item.name }}
@@ -49,8 +56,11 @@ function openPage(path) {
                     </template>
                 </ul>
                 <div>
-                    <router-link type="button" class="btn btn-primary" to="/login" @click.prevent="openPage(`/login`)">
+                    <router-link v-if="!authStore.isAuthenticated" type="button" class="btn btn-primary" to="/login" @click.prevent="openPage(`/login`)">
                         Log in
+                    </router-link>
+                    <router-link v-else type="button" class="btn btn-primary" to="/login" @click.prevent="handleLogout">
+                        Log out
                     </router-link>
                 </div>
             </div>

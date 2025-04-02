@@ -3,11 +3,11 @@
 import { ref } from 'vue'
 import { useLoginStore } from '@/stores/login'
 import { useRouter } from 'vue-router'
-import { API_ENDPOINTS } from '@/utils/config'
-import axios from "axios"
+import { useAuthStore } from "@/stores/auth";
 
 const router = useRouter()
 const loginStore = useLoginStore()
+const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
@@ -83,10 +83,7 @@ async function handleSubmittion() {
             return
         }
 
-        await axios.post(API_ENDPOINTS.register, {
-            email: email.value,
-            password: password.value
-        })
+        await authStore.register({ email: email.value, password: password.value })
 
         loginStore.setWasRegistrated(true)
 
