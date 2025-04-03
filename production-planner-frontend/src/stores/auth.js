@@ -10,17 +10,17 @@ export const useAuthStore = defineStore('auth', () => {
     const isAuthenticated = computed(() => !!token.value)
 
     async function fetchUser() {
-        const response = await axios.get(`${API_ENDPOINTS.me}`)
+        const response = await axios.get(API_ENDPOINTS.me)
         user.value = response.data.user
         return response
     }
 
     async function register(credentials) {
-        await axios.post(`${API_ENDPOINTS.register}`, credentials)
+        await axios.post(API_ENDPOINTS.register, credentials)
     }
 
     async function login(credentials) {
-        const response = await axios.post(`${API_ENDPOINTS.login}`, credentials)
+        const response = await axios.post(API_ENDPOINTS.login, credentials)
         user.value = response.data.user
         token.value = response.data.token
         localStorage.setItem("token", token.value)
