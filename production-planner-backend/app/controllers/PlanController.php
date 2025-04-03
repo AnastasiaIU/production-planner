@@ -18,7 +18,19 @@ class PlanController extends BaseController
         $this->planModel = new PlanModel();
     }
 
-
+    /**
+     * Retrieves all production plans created by a specific user.
+     * Supports optional pagination through `page` and `limit` query parameters.
+     *
+     * Example:
+     *   /api/users/5/plans?page=1&limit=10
+     *
+     * @param string $id The ID of the user whose plans are being fetched.
+     *
+     * @return void Sends a JSON response containing either all plans for the user,
+     *              or a paginated subset if `page` and `limit` are provided.
+     *              If an error occurs, a server error message is sent instead.
+     */
     public function getAllByUser(string $id): void
     {
         try {
@@ -71,17 +83,39 @@ class PlanController extends BaseController
 
     /**
      * Creates a new production plan in the database.
-     *
-     * @param string $createdBy The user who created the production plan.
-     * @param string $displayName The display name of the production plan.
-     * @param array $items An associative array of item IDs and amounts for this plan.
      */
-    public function createProductionPlan(string $createdBy, string $displayName, array $items): void
+    public function create(): void
     {
-        if ($this->planModel->createProductionPlan($createdBy, $displayName, $items)) {
-            header('Location: /plans');
-        } else {
-            http_response_code(500);
+        $data = $this->decodePostData(); // Use base controller method to get POST data
+        $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
+
+        try {
+            $plan = $this->planModel->create($data);
+
+            ResponseService::Send($plan);
+
+        } catch (Throwable $th) {
+            ResponseService::Error('Server error: ' . $th->getMessage());
+        }
+    }
+
+    /**
+     * Updates a production plan in the database.
+     *
+     * @param string $planId The ID of the production plan to update.
+     */
+    public function update(string $planId): void
+    {
+        $data = $this->decodePostData(); // Use base controller method to get POST data
+        $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
+
+        try {
+            $plan = $this->planModel->update($planId, $data);
+
+            ResponseService::Send($plan);
+
+        } catch (Throwable $th) {
+            ResponseService::Error('Server error: ' . $th->getMessage());
         }
     }
 
@@ -90,24 +124,9 @@ class PlanController extends BaseController
      *
      * @param string $planId The ID of the production plan to delete.
      */
-    public function deleteProductionPlan(string $planId): void
+    public function delete(string $planId): void
     {
-        $this->planModel->deleteProductionPlan($planId);
-    }
-
-    /**
-     * Updates a production plan in the database.
-     *
-     * @param string $planId The ID of the production plan to update.
-     * @param string $displayName The new display name of the production plan.
-     * @param array $items An associative array of item IDs and amounts for this plan.
-     */
-    public function updateProductionPlan(string $planId, string $displayName, array $items): void
-    {
-        if ($this->planModel->updateProductionPlan($planId, $displayName, $items)) {
-            header('Location: /plans');
-        } else {
-            http_response_code(500);
-        }
+        $this->planModel->delete($planId);
+        ResponseService::Send(true);
     }
 }

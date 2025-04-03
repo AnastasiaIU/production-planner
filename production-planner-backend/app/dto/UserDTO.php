@@ -22,15 +22,6 @@ class UserDTO
         $this->role = $role;
     }
 
-    // Getters
-    public function getId(): int {
-        return $this->id;
-    }
-
-    public function getEmail(): string {
-        return $this->email;
-    }
-
     /**
      * Creates an UserDTO instance from an associative array.
      *

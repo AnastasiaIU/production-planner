@@ -13,11 +13,11 @@ require_once(__DIR__ . "/../env.php");
 require_once(__DIR__ . "/../services/populate-db.php");
 
 // require local classes
+use App\Controllers\BaseController;
 use App\Controllers\ItemController;
 use App\Controllers\MachineController;
 use App\Controllers\PlanController;
 use App\Controllers\RecipeController;
-use App\Services\AuthHandler;
 use App\Services\ErrorReportingService;
 use App\Services\ResponseService;
 use App\Controllers\AuthController;
@@ -42,12 +42,12 @@ try {
     Route::add('/api/auth/register', function () {
         $authController = new AuthController();
         $authController->register();
-    }, ["post"]);
+    }, 'post');
 
     Route::add('/api/auth/login', function () {
         $authController = new AuthController();
         $authController->login();
-    }, ["post"]);
+    }, 'post');
 
     Route::add('/api/auth/me', function () {
         $authController = new AuthController();
@@ -85,7 +85,7 @@ try {
         $machineController->get($id);
     });
     // API route for fetching production plans by user ID
-    Route::add('/api/users/([0-9]+)/production-plans', function ($userId) {
+    Route::add('/api/users/([0-9]+)/plans', function ($userId) {
         $planController = new PlanController();
         $planController->getAllByUser($userId);
     });
@@ -101,174 +101,44 @@ try {
     });
 
     /**
-     * Main page route
+     * POST API routes
      */
-    // Main page route
-    Route::add('/', function () {
-        $planError = $_SESSION['plan_error'] ?? null;
-        $plan = $_SESSION['plan'] ?? null;
-        unset($_SESSION['plan_error'], $_SESSION['plan']);
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Sanitize input
-            $planId = null;
-            $name = '';
-            $items = [];
-            foreach ($_POST as $key => $value) {
-                $name = $key === 'planName' ? htmlspecialchars(trim($value)) : $name;
-                $planId = $key === 'createPlanId' ? htmlspecialchars(trim($value)) : $planId;
-                if ($key !== 'planName' && $key !== 'createPlanId') {
-                    $items[$key] = htmlspecialchars(trim($value));
-                }
-            }
-
-            $planController = new PlanController();
-
-            if ($planId) {
-                $planController->updateProductionPlan($planId, $name, $items);
-            } else {
-                $planController->createProductionPlan($_SESSION['user'], $name, $items);
-            }
-
-            if (http_response_code() === 500) {
-                header('Location: /');
-            }
-        } else {
-            require(__DIR__ . '/../views/pages/index.php');
-        }
-    }, ["get", "post"]);
-
-    /**
-     * Login routes
-     */
-    // Login page route
-    Route::add('/login', function () {
-        $loginError = $_SESSION['login_error'] ?? null;
-        $loginFormData = $_SESSION['login_form_data'] ?? [];
-        $loginUserCreated = $_SESSION['login_user_created'] ?? null;
-        unset($_SESSION['login_error'], $_SESSION['login_form_data'], $_SESSION['login_user_created']);
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Sanitize input
-            $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
-            $password = htmlspecialchars(trim($_POST['password']));
-
-            $userController = new UserController();
-            $userController->attemptLogin($email, $password);
-
-            if (http_response_code() === 400) {
-                header('Location: /login');
-            }
-        } else {
-            require_once(__DIR__ . '/../views/pages/login.php');
-        }
-    }, ["get", "post"]);
-
-    // Logout route
-    Route::add('/logout', function () {
-        unset($_SESSION['user']);
-        header('Location: /');
-    });
-
-    /**
-     * Plane routes
-     */
-    // My plans page route
-    Route::add('/plans', function () {
-        AuthHandler::checkUserLoggedIn();
-
-        $planError = $_SESSION['plan_error'] ?? null;
-        unset($_SESSION['plan_error']);
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deletePlanId'])) {
-            $planId = filter_input(INPUT_POST, 'deletePlanId', FILTER_SANITIZE_NUMBER_INT);
-
-            $planController = new PlanController();
-            $planController->deleteProductionPlan($planId);
-
-            header("Location: /plans");
-        }
-
-        require_once(__DIR__ . '/../views/pages/plans.php');
-    }, ["get", "post"]);
-
-
-    // Route for passing a plan to the main page
-    Route::add('/plan/([a-zA-Z0-9_-]*)', function ($planId) {
-        AuthHandler::checkUserLoggedIn();
+    // API route for creating a production plan
+    Route::add('/api/plans', function () {
+        $baseController = new BaseController();
+        $baseController->getAuthenticatedUser();
 
         $planController = new PlanController();
-        $plan = $planController->get($planId);
-
-        if (!$plan || $plan->created_by !== $_SESSION['user']) {
-            $_SESSION['plan_error'] = 'Plan not found.';
-            header("Location: /");
-            exit();
-        }
-
-        $_SESSION['plan'] = $plan;
-        header("Location: /");
-    });
-
-
-    // API route for importing a production plan
-    Route::add('/importPlan', function () {
-        AuthHandler::checkUserLoggedIn();
-
-        $plan = json_decode(file_get_contents('php://input'), true);
-
-        if ($plan) {
-            $planController = new PlanController();
-            $planController->createProductionPlan($plan['created_by'], $plan['display_name'], $plan['items']);
-            echo json_encode(['status' => 'success']);
-        } else {
-            echo json_encode(['status' => 'error', 'message' => 'Invalid data']);
-        }
-    }, ['post']);
-
-    // API route for logging import errors
-    Route::add('/logImportError', function () {
-        AuthHandler::checkUserLoggedIn();
-
-        $errorData = json_decode(file_get_contents('php://input'), true);
-
-        if (isset($errorData['error'])) {
-            $_SESSION['plan_error'] = $errorData['error'];
-        }
-    }, ['post']);
+        $planController->create();
+    }, 'post');
 
     /**
-     * Registration routes
+     * PUT API routes
      */
-    // Registration page route
-    Route::add('/register', function () {
-        $error = $_SESSION['error'] ?? null;
-        $formData = $_SESSION['form_data'] ?? [];
-        unset($_SESSION['error'], $_SESSION['form_data']);
+    // API route for updating the production plan by its ID
+    Route::add('/api/plans/([0-9]+)', function ($id) {
+        $baseController = new BaseController();
+        $baseController->getAuthenticatedUser();
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // Sanitize input
-            $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
-            $password = htmlspecialchars(trim($_POST['password']));
+        $planController = new PlanController();
+        $planController->update($id);
+    }, 'put');
 
-            $userController = new UserController();
-            $userController->registerUser($email, $password);
+    /**
+     * DELETE API routes
+     */
+    // API route for deleting the production plan by its ID
+    Route::add('/api/plans/([0-9]+)', function ($id) {
+        $baseController = new BaseController();
+        $baseController->getAuthenticatedUser();
 
-            if (http_response_code() === 400) {
-                header('Location: /register');
-            }
-        } else {
-            require_once(__DIR__ . '/../views/pages/register.php');
-        }
-    }, ["get", "post"]);
+        $planController = new PlanController();
+        $planController->delete($id);
+    }, 'delete');
+
 } catch (Throwable $error) {
-    if ($_ENV["environment" == "LOCAL"]) {
-        var_dump($error);
-    } else {
-        error_log($error);
-    }
+    error_log($error);
     ResponseService::Error("A server error occurred");
 }
-
 
 Route::run();

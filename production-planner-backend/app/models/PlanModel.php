@@ -3,8 +3,8 @@
 namespace App\Models;
 
 use App\DTO\PlanDTO;
-use Exception;
 use PDO;
+use Throwable;
 
 /**
  * Plan class extends Base to interact with the PRODUCTION PLAN entity in the database.
@@ -37,7 +37,19 @@ class PlanModel extends BaseModel
         return $dtos;
     }
 
-
+    /**
+     * Retrieves a paginated list of production plans for a specific user.
+     *
+     * This method queries the database for production plans created by the given user,
+     * applying the provided offset and limit for pagination. For each plan retrieved,
+     * it also fetches the associated items and constructs a PlanDTO.
+     *
+     * @param string $userId The ID of the user whose plans should be fetched.
+     * @param int $offset The number of records to skip (used for pagination).
+     * @param int $limit The maximum number of records to return.
+     *
+     * @return array An array of PlanDTO objects representing the user's production plans.
+     */
     public function getAllPaginatedByUser(string $userId, int $offset, int $limit): array
     {
         $query = self::$pdo->prepare(
@@ -123,40 +135,103 @@ class PlanModel extends BaseModel
     /**
      * Creates a new production plan in the database.
      *
-     * @param string $createdBy The user who created the production plan.
-     * @param string $displayName The display name of the production plan.
-     * @param array $items An associative array of item IDs and amounts for this plan.
-     * @return bool True if the plan was created successfully, false otherwise.
+     * @param array $plan An associative array containing the plan details.
+     *
+     * @return PlanDTO|null The data transfer object representing the created production plan
+     * or null if the operation has failed.
      */
-    public function createProductionPlan(string $createdBy, string $displayName, array $items): bool
+    public function create(array $plan): ?PlanDTO
     {
         try {
             // Begin transaction to ensure the correct production plan id is returned
             self::$pdo->beginTransaction();
 
-            $insertPlanQuery = self::$pdo->prepare(
+            $data = [
+                'created_by' => $plan['created_by'],
+                'display_name' => $plan['display_name']
+            ];
+
+            $query = self::$pdo->prepare(
                 'INSERT INTO `PRODUCTION PLAN` (created_by, display_name) VALUES (:createdBy, :displayName)'
             );
-            $insertPlanQuery->bindParam("createdBy", $createdBy);
-            $insertPlanQuery->bindParam("displayName", $displayName);
-            $insertPlanQuery->execute();
-            $insertPlanQuery->closeCursor();
+            $query->execute([
+                ":createdBy" => (int)$data['created_by'],
+                ":displayName" => $data['display_name']
+            ]);
+            $query->closeCursor();
 
             // Get the ID of the created production plan
             $planId = self::$pdo->lastInsertId();
+            $data['id'] = $planId;
 
-            // Insert items associated with the production plan
-            $this->createPlanItems($planId, $items);
+            // Insert items associated with the production plan into the database
+            $this->createPlanItems($planId, $plan['items']);
+            $items = $this->getPlanItems($planId);
+
+            $newPlan = PlanDTO::fromArray($data, $items);
 
             // Commit transaction
             self::$pdo->commit();
-            return true;
-        } catch (Exception $e) {
+
+            return $newPlan;
+        } catch (Throwable $th) {
             // Rollback transaction in case of error
             self::$pdo->rollBack();
-            $_SESSION['plan_error'] = 'Failed to save the production plan. Please, try again.';
-            error_log($e->getMessage());
-            return false;
+            error_log($th->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Updates a production plan in the database.
+     *
+     * @param string $planId The ID of the production plan to update.
+     * @param array $newData An associative array containing the updated plan details.
+     *
+     * @return PlanDTO|null The data transfer object representing the updated production plan
+     * or null if the operation has failed.
+     */
+    public function update(string $planId, array $newData): ?PlanDTO
+    {
+        try {
+            // Begin transaction
+            self::$pdo->beginTransaction();
+
+            $data = [
+                'created_by' => $newData['created_by'],
+                'display_name' => $newData['display_name']
+            ];
+
+            // Update the production plan
+            $query = self::$pdo->prepare(
+                'UPDATE `PRODUCTION PLAN` SET created_by = :createdBy, display_name = :displayName WHERE id = :planId'
+            );
+            $query->execute([
+                ":createdBy" => (int)$newData['created_by'],
+                ":displayName" => $newData['display_name'],
+                ":planId" => $planId
+            ]);
+            $query->closeCursor();
+
+            // Delete existing items associated with the production plan
+            $this->deletePlanItems($planId);
+
+            // Insert updated items associated with the production plan into the database
+            $this->createPlanItems($planId, $newData['items']);
+            $items = $this->getPlanItems($planId);
+
+            $data['id'] = $planId;
+            $newPlan = PlanDTO::fromArray($data, $items);
+
+            // Commit transaction
+            self::$pdo->commit();
+
+            return $newPlan;
+        } catch (Throwable $th) {
+            // Rollback transaction in case of error
+            self::$pdo->rollBack();
+            error_log($th->getMessage());
+            return null;
         }
     }
 
@@ -166,7 +241,7 @@ class PlanModel extends BaseModel
      * @param string $planId The ID of the production plan to delete.
      * @return bool True if the plan was deleted successfully, false otherwise.
      */
-    public function deleteProductionPlan(string $planId): bool
+    public function delete(string $planId): bool
     {
         try {
             // Begin transaction
@@ -176,62 +251,20 @@ class PlanModel extends BaseModel
             $this->deletePlanItems($planId);
 
             // Delete the production plan
-            $deletePlanQuery = self::$pdo->prepare(
+            $query = self::$pdo->prepare(
                 'DELETE FROM `PRODUCTION PLAN` WHERE id = :planId'
             );
-            $deletePlanQuery->bindParam('planId', $planId);
-            $deletePlanQuery->execute();
-            $deletePlanQuery->closeCursor();
+            $query->bindParam(':planId', $planId);
+            $query->execute();
+            $query->closeCursor();
 
             // Commit transaction
             self::$pdo->commit();
             return true;
-        } catch (Exception $e) {
+        } catch (Throwable $th) {
             // Rollback transaction in case of error
             self::$pdo->rollBack();
-            $_SESSION['plan_error'] = 'Failed to delete the production plan. Please, try again.';
-            error_log($e->getMessage());
-            return false;
-        }
-    }
-
-    /**
-     * Updates a production plan in the database.
-     *
-     * @param string $planId The ID of the production plan to update.
-     * @param string $displayName The new display name of the production plan.
-     * @param array $items An associative array of item IDs and amounts for this plan.
-     * @return bool True if the plan was updated successfully, false otherwise.
-     */
-    public function updateProductionPlan(string $planId, string $displayName, array $items): bool
-    {
-        try {
-            // Begin transaction
-            self::$pdo->beginTransaction();
-
-            // Update the production plan
-            $updatePlanQuery = self::$pdo->prepare(
-                'UPDATE `PRODUCTION PLAN` SET display_name = :displayName WHERE id = :planId'
-            );
-            $updatePlanQuery->bindParam('displayName', $displayName);
-            $updatePlanQuery->bindParam('planId', $planId);
-            $updatePlanQuery->execute();
-            $updatePlanQuery->closeCursor();
-
-            // Delete existing items associated with the production plan
-            $this->deletePlanItems($planId);
-
-            // Insert new items
-            $this->createPlanItems($planId, $items);
-
-            // Commit transaction
-            self::$pdo->commit();
-            return true;
-        } catch (Exception $e) {
-            // Rollback transaction in case of error
-            self::$pdo->rollBack();
-            $_SESSION['plan_error'] = 'Failed to update the production plan. Please, try again.';
-            error_log($e->getMessage());
+            error_log($th->getMessage());
             return false;
         }
     }
@@ -242,16 +275,19 @@ class PlanModel extends BaseModel
      * @param string $planId The ID of the production plan.
      * @param array $items An associative array of item IDs and amounts.
      */
-    private function createPlanItems(string $planId, array $items): void {
-        foreach ($items as $itemId => $amount) {
+    private function createPlanItems(string $planId, array $items): void
+    {
+        foreach ($items as $item) {
             $insertItemQuery = self::$pdo->prepare(
                 'INSERT INTO `PRODUCTION PLAN CONTENT` (plan_id, item_id, amount) 
                         VALUES (:planId, :itemId, :amount)'
             );
-            $insertItemQuery->bindParam('planId', $planId);
-            $insertItemQuery->bindParam('itemId', $itemId);
-            $insertItemQuery->bindParam('amount', $amount);
-            $insertItemQuery->execute();
+
+            $insertItemQuery->execute([
+                ":planId" => $planId,
+                ":itemId" => $item['item_id'],
+                ":amount" => (int)$item['amount']
+            ]);
             $insertItemQuery->closeCursor();
         }
     }
@@ -261,7 +297,8 @@ class PlanModel extends BaseModel
      *
      * @param string $planId The ID of the production plan.
      */
-    private function deletePlanItems(string $planId): void {
+    private function deletePlanItems(string $planId): void
+    {
         $deleteItemsQuery = self::$pdo->prepare(
             'DELETE FROM `PRODUCTION PLAN CONTENT` WHERE plan_id = :planId'
         );
