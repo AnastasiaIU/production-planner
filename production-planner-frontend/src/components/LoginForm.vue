@@ -87,6 +87,7 @@ async function handleSubmittion() {
         }
 
         await authStore.login({ email: email.value, password: password.value })
+        await authStore.fetchUser()
 
         router.push('/plans')
 

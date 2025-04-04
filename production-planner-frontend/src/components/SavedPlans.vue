@@ -48,6 +48,11 @@ async function handleSubmittion() {
     }
 }
 
+function viewPlan(plan) {
+    prodPlanStore.setCurrentPlan(plan)
+    router.push('/')
+}
+
 </script>
 
 <template>
@@ -68,11 +73,10 @@ async function handleSubmittion() {
                     <p class="h6 my-auto">{{ plan.display_name }}</p>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    <a class="btn btn-primary" id="viewBtn" data-view-plan-id="{{ plan.id }}">View/Edit</a>
-                    <a class="btn btn-success" id="exportBtn" data-export-plan-id="{{ plan.id }}">Export in
-                        JSON</a>
-                    <a class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                        data-delete-plan-id="{{ plan.id }}" @click="prodPlanStore.currentPlan = plan">Delete</a>
+                    <a class="btn btn-primary text-nowrap" id="viewBtn" @click="viewPlan(plan)">View/Edit</a>
+                    <a class="btn btn-success text-nowrap" id="exportBtn">Export in JSON</a>
+                    <a class="btn btn-danger text-nowrap" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                        @click="prodPlanStore.currentPlan = plan">Delete</a>
                 </div>
             </div>
         </div>
@@ -89,8 +93,8 @@ async function handleSubmittion() {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form id="deleteForm" method="delete" @submit.prevent="handleSubmittion">
-                        <input type="hidden" name="planId" value="{{ prodPlanStore.currentPlan.id }}">
+                    <form id="deleteForm" method="delete" @submit.prevent="handleSubmittion()">
+                        <input type="hidden" name="planId">
                         <button type="submit" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
                     </form>
                 </div>

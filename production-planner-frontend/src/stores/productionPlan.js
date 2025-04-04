@@ -3,9 +3,13 @@ import { ref } from 'vue'
 import axios from 'axios'
 import { API_ENDPOINTS } from '@/utils/config'
 
-export const useProdPlanStore = defineStore('productionPlan', () => {
+export const useProdPlanStore = defineStore('pinia-production-plan', () => {
     const plans = ref([])
     const currentPlan = ref(null)
+
+    function setCurrentPlan(plan) {
+        currentPlan.value = plan
+    }
 
     async function fetchAll(userId) {
         const response = await axios.get(API_ENDPOINTS.getProdPlans(userId))
@@ -36,5 +40,5 @@ export const useProdPlanStore = defineStore('productionPlan', () => {
         currentPlan.value = null
     }
 
-    return { plans, currentPlan, fetchAll, fetchOne, create, update, remove }
-})
+    return { plans, currentPlan, setCurrentPlan, fetchAll, fetchOne, create, update, remove }
+}, { persist: true })

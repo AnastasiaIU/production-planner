@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const useSpinnerStore = defineStore('loadingSpinner', () => {
+export const useSpinnerStore = defineStore('pinia-loading-spinner', () => {
     const isLoading = ref(false)
 
     function show() {

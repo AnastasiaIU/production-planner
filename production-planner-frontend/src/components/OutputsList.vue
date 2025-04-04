@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from "@/utils/config"
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { Dropdown } from "@/utils/Dropdown.js"
 import { getImageUrl } from "@/utils/domHelper.js"
+import { useProdPlanStore } from "@/stores/productionPlan"
 
 const itemsRaw = ref({})
 const itemsGrouped = ref({})
@@ -13,6 +14,8 @@ const error = ref(null)
 const dropdownSearch = ref('')
 const hasNoElements = ref(false)
 const dropdown = new Dropdown()
+const planName = ref('')
+const prodPlanStore = useProdPlanStore()
 
 // The order in which categories should be displayed in the dropdown
 const categoryOrder = [
@@ -41,6 +44,14 @@ onMounted(async () => {
             filterDropdown() // Reset the dropdown items
         }
     })
+    
+    if (prodPlanStore.currentPlan) {
+        planName.value = prodPlanStore.currentPlan.display_name
+        Object.entries(prodPlanStore.currentPlan.items).forEach(async ([id, amount]) => {
+            const dropdownElement = document.querySelector(`[data-item-id="${id}"]`);
+            await dropdown.appendItemToOutputsList(dropdownElement, amount)
+        })
+    }
 })
 
 onBeforeUnmount(() => {
@@ -120,8 +131,11 @@ function groupAndSortItems() {
     <aside class="col-md-4 d-flex flex-column p-0">
         <section class="card d-flex flex-column flex-grow-1">
             <div id="outputsDropdown" class="dropdown d-flex justify-content-between align-items-center p-2">
-                <p class="h5 m-0">Outputs</p>
-                <a id="addItemBtn" class="btn btn-secondary dropdown-toggle" role="button" data-bs-toggle="dropdown"
+                <div class="d-flex flex-row flex-wrap text-nowrap gap-3">
+                <p class="h5 my-auto">Outputs</p>
+                <button type="submit" class="btn btn-primary" id="savePlanBtn">Start new plan</button>
+                </div>
+                <a id="addItemBtn" class="btn btn-secondary dropdown-toggle text-nowrap" role="button" data-bs-toggle="dropdown"
                     aria-expanded="false">
                     Add item
                 </a>
@@ -147,7 +161,7 @@ function groupAndSortItems() {
                         </div>
                         <div v-for="items, category in itemsGrouped" :key="category[0]">
                             <h6 class="dropdown-header">{{ category }}</h6>
-                            <li v-for="item in items" :key="item.id" @click="dropdown.appendItemToOutputsList">
+                            <li v-for="item in items" :key="item.id" @click="dropdown.appendItemToOutputsList($event.target)">
                                 <a class="dropdown-item" :data-item-id="`${item.id}`">
                                     <img :src="getImageUrl(item.icon_name)" alt="" class="list-item-image">{{
                                         item.display_name }}
@@ -163,11 +177,11 @@ function groupAndSortItems() {
                     <div class="d-flex flex-wrap p-2 pt-0 gap-2 align-items-center justify-content-between">
                         <input type="hidden" name="createPlanId" id="createPlanId">
                         <div class="form-group">
-                            <input type="text" name="planName" class="form-control" id="planName"
+                            <input v-model="planName" type="text" name="planName" class="form-control" id="planName"
                                 placeholder="Enter name for the plan" aria-label="Plan name" required>
                             <div class="invalid-feedback" id="planNamePrompt"></div>
                         </div>
-                        <button type="submit" class="btn btn-primary" id="savePlanBtn">Create new plan</button>
+                        <button type="submit" class="btn btn-primary text-nowrap" id="savePlanBtn">Save plan</button>
                     </div>
                     <hr class="mb-2 mt-0">
                 </div>

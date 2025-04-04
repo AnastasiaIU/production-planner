@@ -11,7 +11,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function fetchUser() {
         const response = await axios.get(API_ENDPOINTS.me)
-        user.value = response.data.user
+        user.value = response.data
         return response
     }
 
@@ -21,7 +21,6 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function login(credentials) {
         const response = await axios.post(API_ENDPOINTS.login, credentials)
-        user.value = response.data.user
         token.value = response.data.token
         localStorage.setItem("token", token.value)
         axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
@@ -31,8 +30,16 @@ export const useAuthStore = defineStore('auth', () => {
     function logout() {
         user.value = null
         token.value = null
+
         localStorage.removeItem("token")
+
+        Object.keys(localStorage)
+            .filter(key => key.startsWith('pinia-'))
+            .forEach(key => localStorage.removeItem(key))
+
         delete axios.defaults.headers.common['Authorization']
+
+        localStorage.removeItem("auth")
     }
 
     async function initializeAuth() {
@@ -50,4 +57,4 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     return { user, token, isAuthenticated, fetchUser, register, login, logout, initializeAuth }
-})
+}, { persist: true })

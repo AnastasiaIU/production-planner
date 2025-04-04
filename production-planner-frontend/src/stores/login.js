@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const useLoginStore = defineStore('login', () => {
+export const useLoginStore = defineStore('pinia-login', () => {
     const wasRegistrated = ref(false)
 
     function setWasRegistrated(value) {
@@ -9,4 +9,4 @@ export const useLoginStore = defineStore('login', () => {
     }
 
     return { wasRegistrated, setWasRegistrated }
-})
+}, { persist: true })

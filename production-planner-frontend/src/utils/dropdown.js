@@ -51,17 +51,17 @@ export class Dropdown {
         return categoryItems
     }
 
-    async appendItemToOutputsList(event, amount = 1) {
+    async appendItemToOutputsList(element, amount = 1) {
         const planName = document.getElementById('planName')
         planName.setCustomValidity('')
 
-        const itemId = event.target.dataset.itemId
-        const itemName = event.target.innerText.trim()
-        const itemIcon = event.target.querySelector('img')?.src || ''
+        const itemId = element.dataset.itemId
+        const itemName = element.innerText.trim()
+        const itemIcon = element.querySelector('img')?.src || ''
         const listItem = this.createListItem(itemId, itemIcon, itemName, amount)
 
         // Hide the dropdown item
-        this.changeVisibility(event.target, false)
+        this.changeVisibility(element, false)
 
         const outputsList = document.getElementById('outputsList')
         outputsList.appendChild(listItem)
