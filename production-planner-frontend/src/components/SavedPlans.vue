@@ -3,7 +3,7 @@
 import { useAuthStore } from "@/stores/auth"
 import { useRouter } from 'vue-router'
 import { useProdPlanStore } from "@/stores/productionPlan"
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -19,6 +19,14 @@ onMounted(async () => {
     } catch (error) {
         console.error('An error occurred:', error)
     }
+
+    const modal = document.getElementById('deleteModal')
+    modal.addEventListener('hide.bs.modal', () => {
+        prodPlanStore.currentPlan = null
+    })
+})
+
+onBeforeUnmount(() => {
 })
 
 async function handleSubmittion() {

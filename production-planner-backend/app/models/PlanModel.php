@@ -286,7 +286,7 @@ class PlanModel extends BaseModel
             $insertItemQuery->execute([
                 ":planId" => $planId,
                 ":itemId" => $item['item_id'],
-                ":amount" => (int)$item['amount']
+                ":amount" => (double)$item['amount']
             ]);
             $insertItemQuery->closeCursor();
         }

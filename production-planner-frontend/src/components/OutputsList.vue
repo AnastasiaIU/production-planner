@@ -2,11 +2,14 @@
 
 import axios from "axios"
 import { API_ENDPOINTS } from "@/utils/config"
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { Dropdown } from "@/utils/Dropdown.js"
 import { getImageUrl } from "@/utils/domHelper.js"
 import { useProdPlanStore } from "@/stores/productionPlan"
+import { useAuthStore } from "@/stores/auth"
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const itemsRaw = ref({})
 const itemsGrouped = ref({})
 const isLoading = ref(true)
@@ -16,6 +19,7 @@ const hasNoElements = ref(false)
 const dropdown = new Dropdown()
 const planName = ref('')
 const prodPlanStore = useProdPlanStore()
+const authStore = useAuthStore()
 
 // The order in which categories should be displayed in the dropdown
 const categoryOrder = [
@@ -36,6 +40,7 @@ const categoryOrder = [
 onMounted(async () => {
     await fetchItems()
     groupAndSortItems()
+    await nextTick()
 
     const dropdownElement = document.getElementById('outputsDropdown')
     dropdownElement.addEventListener("hide.bs.dropdown", () => {
@@ -44,12 +49,12 @@ onMounted(async () => {
             filterDropdown() // Reset the dropdown items
         }
     })
-    
+
     if (prodPlanStore.currentPlan) {
         planName.value = prodPlanStore.currentPlan.display_name
-        Object.entries(prodPlanStore.currentPlan.items).forEach(async ([id, amount]) => {
-            const dropdownElement = document.querySelector(`[data-item-id="${id}"]`);
-            await dropdown.appendItemToOutputsList(dropdownElement, amount)
+        Object.entries(prodPlanStore.currentPlan.items).forEach(async item => {
+            const dropdownElement = document.querySelector(`[data-item-id="${item[0]}"]`);
+            await dropdown.appendItemToOutputsList(dropdownElement, item[1])
         })
     }
 })
@@ -57,6 +62,8 @@ onMounted(async () => {
 onBeforeUnmount(() => {
     const dropdownElement = document.getElementById('outputsDropdown')
     dropdownElement.removeEventListener('hide.bs.dropdown', filterDropdown)
+
+    prodPlanStore.currentPlan = null
 })
 
 function filterDropdown() {
@@ -125,6 +132,73 @@ function groupAndSortItems() {
     itemsGrouped.value = sortedGroupedItems
 }
 
+function clearPlan() {
+    prodPlanStore.currentPlan = null
+    planName.value = ''
+    dropdown.clearOutputsList()
+}
+
+function validateForm(input, prompt, form, message = '', valid = true) {
+    prompt.textContent = message
+    input.setCustomValidity(valid ? '' : 'error')
+    form.classList.add('was-validated')
+}
+
+async function handleSubmittion() {
+    try {
+        const form = document.getElementById('planForm')
+        const input = document.getElementById('planName')
+        const inputPrompt = document.getElementById('planNamePrompt')
+        validateForm(input, inputPrompt, form)
+
+        planName.value = planName.value.trim()
+        await nextTick()
+
+        if (planName.value === '') {
+            validateForm(input, inputPrompt, form, 'The name cannot be empty.', false)
+            return
+        }
+
+        const outputsList = document.getElementById('outputsList')
+
+        if (outputsList.children.length === 0) {
+            validateForm(input, inputPrompt, form, 'Please add at least one item to the plan.', false)
+            return
+        }
+
+        const listItems = Array.from(outputsList.querySelectorAll('li'))
+        const items = listItems.map(listItem => {
+            const itemId = listItem.dataset.itemId
+            const input = listItem.querySelector(".quantity-input")
+
+            let quantity = input.value.replace(',', '.')
+            quantity = parseFloat(quantity)
+
+            return {
+                item_id: itemId,
+                amount: quantity
+            }
+        });
+
+        const planData = {
+            created_by: authStore.user.id,
+            display_name: planName.value,
+            items: items
+        }
+
+        if (prodPlanStore.currentPlan) {
+            await prodPlanStore.update(prodPlanStore.currentPlan.id, planData)
+        } else {
+            await prodPlanStore.create(planData)
+        }
+
+        router.push('/plans')
+
+    } catch (error) {
+        console.error('An error occurred: ', error)
+    }
+}
+
 </script>
 
 <template>
@@ -132,16 +206,17 @@ function groupAndSortItems() {
         <section class="card d-flex flex-column flex-grow-1">
             <div id="outputsDropdown" class="dropdown d-flex justify-content-between align-items-center p-2">
                 <div class="d-flex flex-row flex-wrap text-nowrap gap-3">
-                <p class="h5 my-auto">Outputs</p>
-                <button type="submit" class="btn btn-primary" id="savePlanBtn">Start new plan</button>
+                    <p class="h5 my-auto">Outputs</p>
+                    <button v-if="authStore.isAuthenticated" type="submit" class="btn btn-primary" id="savePlanBtn"
+                        @click="clearPlan">Start new plan</button>
                 </div>
-                <a id="addItemBtn" class="btn btn-secondary dropdown-toggle text-nowrap" role="button" data-bs-toggle="dropdown"
-                    aria-expanded="false">
+                <a id="addItemBtn" class="btn btn-secondary dropdown-toggle text-nowrap" role="button"
+                    data-bs-toggle="dropdown" aria-expanded="false">
                     Add item
                 </a>
                 <ul id="dropdownMenu" class="dropdown-menu dropdown-menu-end overflow-auto">
                     <li>
-                        <form class="px-3 py-2">
+                        <form class="px-3 py-2" @submit.prevent>
                             <input v-model="dropdownSearch" type="text" class="form-control"
                                 placeholder="Search items..." @keyup="filterDropdown" aria-label="Search items">
                         </form>
@@ -161,7 +236,8 @@ function groupAndSortItems() {
                         </div>
                         <div v-for="items, category in itemsGrouped" :key="category[0]">
                             <h6 class="dropdown-header">{{ category }}</h6>
-                            <li v-for="item in items" :key="item.id" @click="dropdown.appendItemToOutputsList($event.target)">
+                            <li v-for="item in items" :key="item.id"
+                                @click="dropdown.appendItemToOutputsList($event.target)">
                                 <a class="dropdown-item" :data-item-id="`${item.id}`">
                                     <img :src="getImageUrl(item.icon_name)" alt="" class="list-item-image">{{
                                         item.display_name }}
@@ -172,14 +248,16 @@ function groupAndSortItems() {
                 </ul>
             </div>
             <hr class="mb-2 mt-0">
-            <form class="d-flex flex-column needs-validation" id="planForm" method="post" novalidate>
-                <div id="savePlan">
+            <form class="d-flex flex-column needs-validation" id="planForm" @submit.prevent="handleSubmittion"
+                novalidate>
+                <div v-if="authStore.isAuthenticated" id="savePlan">
                     <div class="d-flex flex-wrap p-2 pt-0 gap-2 align-items-center justify-content-between">
                         <input type="hidden" name="createPlanId" id="createPlanId">
                         <div class="form-group">
                             <input v-model="planName" type="text" name="planName" class="form-control" id="planName"
-                                placeholder="Enter name for the plan" aria-label="Plan name" required>
-                            <div class="invalid-feedback" id="planNamePrompt"></div>
+                                placeholder="Enter name for the plan" @keydown.enter.prevent aria-label="Plan name"
+                                required>
+                            <div class="invalid-feedback" id="planNamePrompt">The name cannot be empty.</div>
                         </div>
                         <button type="submit" class="btn btn-primary text-nowrap" id="savePlanBtn">Save plan</button>
                     </div>

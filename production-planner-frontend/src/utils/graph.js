@@ -221,11 +221,9 @@ export class Graph {
      * @param {string} itemId The ID of the item.
      */
     removeGraph(itemId) {
-        console.log("Removing production graph for item ID:", itemId);
-        // Remove the corresponding production graph
-        /*const productionGraphContainer = document.getElementById('productionGraph');
+        const productionGraphContainer = document.getElementById('productionGraph');
         const graphElement = productionGraphContainer.querySelector(`[data-item-id="${itemId}"]`);
-        graphElement.remove();*/
+        graphElement.remove();
     }
 
     /**

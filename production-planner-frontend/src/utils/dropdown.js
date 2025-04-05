@@ -53,7 +53,9 @@ export class Dropdown {
 
     async appendItemToOutputsList(element, amount = 1) {
         const planName = document.getElementById('planName')
-        planName.setCustomValidity('')
+        if (planName) {
+            planName.setCustomValidity('')
+        }
 
         const itemId = element.dataset.itemId
         const itemName = element.innerText.trim()
@@ -72,7 +74,7 @@ export class Dropdown {
 
         const quantityInput = listItem.querySelector(".quantity-input")
         quantityInput.addEventListener('change', async event => {
-            this.handleQuantityChange(event, dropdownContainer, itemId)
+            this.handleQuantityChange(event, dropdownContainer, itemId, listItem)
         })
 
         const removeBtn = listItem.querySelector('.btn-danger')
@@ -82,15 +84,17 @@ export class Dropdown {
         });
     }
 
-    async handleQuantityChange(event, dropdownContainer, itemId) {
+    async handleQuantityChange(event, dropdownContainer, itemId, listItem) {
         let currentValue = parseFloat(event.target.value) || 0
 
         if (currentValue < 0) currentValue = 0
 
+        event.target.value = currentValue
+
         this.graph.removeGraph(itemId)
 
         if (currentValue === 0) {
-            this.removeItemFromOutputs(event, dropdownContainer, itemId);
+            this.removeItemFromOutputs(listItem, dropdownContainer, itemId);
         } else {
             await this.graph.displayGraph(itemId)
         }
@@ -127,12 +131,34 @@ export class Dropdown {
         listItem.innerHTML = `<div class='d-flex align-items-center'>
             <img src="${itemIcon}" alt='icon' class="list-item-image">
             <span>${itemName}</span>
-            <button type="button" class="btn btn-danger ms-3" aria-label='Remove item' data-item-id="${itemId}">-</button>
+            <button type="button" class="btn btn-danger ms-3" aria-label='Remove item' data-item-id="${itemId}">Remove</button>
         </div>
         <div class='d-flex align-items-center p-0'>
-            <input type='number' name="${itemId}" class='form-control text-center quantity-input mt-1' value="${amount}" min='0' step='0.1' aria-label="${itemName} amount" data-item-id="${itemId}">
+            <input type='number' name="${itemId}" class='text-center quantity-input mt-1' value="${amount}" min='0' step='0.1' aria-label="${itemName} amount" data-item-id="${itemId}">
         </div>`;
+        listItem.dataset.itemId = itemId;
+
+        const input = listItem.querySelector('input')
+        input.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault()
+            }
+        });
 
         return listItem;
+    }
+
+    clearOutputsList() {
+        const dropdownContainer = document.getElementById('dropdownItems')
+        const outputsList = document.getElementById('outputsList')
+
+        const listItems = Array.from(outputsList.querySelectorAll('li'))
+
+        listItems.forEach(listItem => {
+            const itemId = listItem.dataset.itemId
+
+            this.graph.removeGraph(itemId)
+            this.removeItemFromOutputs(listItem, dropdownContainer, itemId)
+        });
     }
 }

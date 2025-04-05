@@ -22,6 +22,11 @@ class PlanDTO implements JsonSerializable
         $this->items = $items;
     }
 
+    // Getters
+    public function getCreatedBy(): string {
+        return $this->created_by;
+    }
+
     /**
      * Converts the PlanDTO object to an associative array.
      *

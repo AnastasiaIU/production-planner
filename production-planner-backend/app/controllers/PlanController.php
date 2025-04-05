@@ -89,6 +89,8 @@ class PlanController extends BaseController
         $data = $this->decodePostData(); // Use base controller method to get POST data
         $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
 
+        $this->validateIsMe($data['created_by']);
+
         try {
             $plan = $this->planModel->create($data);
 
@@ -109,6 +111,8 @@ class PlanController extends BaseController
         $data = $this->decodePostData(); // Use base controller method to get POST data
         $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
 
+        $this->validateIsMe($data['created_by']);
+
         try {
             $plan = $this->planModel->update($planId, $data);
 
@@ -126,6 +130,9 @@ class PlanController extends BaseController
      */
     public function delete(string $planId): void
     {
+        $plan = $this->planModel->get($planId);
+        $this->validateIsMe($plan->getCreatedBy());
+
         $this->planModel->delete($planId);
         ResponseService::Send(true);
     }
