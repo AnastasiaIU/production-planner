@@ -61,6 +61,80 @@ function viewPlan(plan) {
     router.push('/')
 }
 
+function exportPlan(plan) {
+    const transformedItems = Object.entries(plan.items).map(([itemId, amount]) => ({
+        item_id: itemId,
+        amount: String(amount)
+    }));
+
+    const exportData = {
+        created_by: plan.created_by,
+        display_name: plan.display_name,
+        items: transformedItems
+    };
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `plan_${plan.id}_${plan.display_name}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+}
+
+function importPlan() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json'
+    input.onchange = async (event) => {
+        const file = event.target.files[0]
+
+        if (file) {
+            const reader = new FileReader()
+
+            reader.onload = async (e) => {
+                try {
+                    const content = JSON.parse(e.target.result);
+
+                    if (
+                        typeof content.display_name !== 'string' ||
+                        !Array.isArray(content.items) ||
+                        !content.items.every(item =>
+                            typeof item.item_id === 'string' &&
+                            (typeof item.amount === 'string' || typeof item.amount === 'number')
+                        )
+                    ) {
+                        throw new Error('Invalid JSON structure')
+                    }
+
+                    const planData = {
+                        created_by: authStore.user.id,
+                        display_name: content.display_name,
+                        items: content.items
+                    }
+
+                    prodPlanStore.create(planData)
+
+                } catch (error) {
+                    console.error('An error occurred:', error)
+                    isError.value = true
+                    toastMessage.value = 'Invalid Invalid JSON structure. Please upload a valid JSON file.'
+                    showToast.value = true
+                    setTimeout(() => {
+                        showToast.value = false
+                        isError.value = false
+                        toastMessage.value = ''
+                    }, 3000)
+                }
+            }
+
+            reader.readAsText(file)
+        }
+    }
+    
+    input.click()
+}
+
 </script>
 
 <template>
@@ -70,7 +144,7 @@ function viewPlan(plan) {
                 <div class="d-flex">
                     <p class="h5 dark-grey-text my-auto">Saved plans</p>
                 </div>
-                <a class="btn btn-secondary mb-1" id="importBtn">Import from JSON</a>
+                <a class="btn btn-secondary mb-1" id="importBtn" @click="importPlan">Import from JSON</a>
             </div>
         </div>
         <div class="d-flex flex-wrap gap-3 justify-content-between p-3 w-100">
@@ -82,7 +156,7 @@ function viewPlan(plan) {
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <a class="btn btn-primary text-nowrap" id="viewBtn" @click="viewPlan(plan)">View/Edit</a>
-                    <a class="btn btn-success text-nowrap" id="exportBtn">Export in JSON</a>
+                    <a class="btn btn-success text-nowrap" id="exportBtn" @click="exportPlan(plan)">Export in JSON</a>
                     <a class="btn btn-danger text-nowrap" data-bs-toggle="modal" data-bs-target="#deleteModal"
                         @click="prodPlanStore.currentPlan = plan">Delete</a>
                 </div>
