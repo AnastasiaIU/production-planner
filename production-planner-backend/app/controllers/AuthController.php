@@ -99,7 +99,8 @@ class AuthController extends BaseController
             'exp' => $expire,
             'user' => [
                 'id' => $user->getId(),
-                'email' => $user->getEmail()
+                'email' => $user->getEmail(),
+                'role' => $user->getRole()->value
             ]
         ];
 
@@ -110,5 +111,15 @@ class AuthController extends BaseController
     {
         $this->validateIsMe($id);
         ResponseService::Send(['message' => 'You are authorized to access this resource']);
+    }
+
+    public function requireRole(Role $requiredRole): void
+    {
+        $user = $this->getAuthenticatedUser();
+
+        if ($user->role !== $requiredRole) {
+            ResponseService::Error("Forbidden: Insufficient privileges", 403);
+            exit();
+        }
     }
 }

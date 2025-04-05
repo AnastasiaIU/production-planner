@@ -18,6 +18,7 @@ use App\Controllers\ItemController;
 use App\Controllers\MachineController;
 use App\Controllers\PlanController;
 use App\Controllers\RecipeController;
+use App\enums\Role;
 use App\Services\ErrorReportingService;
 use App\Services\ResponseService;
 use App\Controllers\AuthController;
@@ -99,6 +100,22 @@ try {
         $recipeController = new RecipeController();
         $recipeController->getStandardByItem($id);
     });
+
+
+
+
+
+    // TODO: Delete/Edit
+    /*Route::add('/api/admin/stats', function () {
+        $authController = new AuthController();
+        $authController->requireRole(Role::ADMIN);
+
+        // If access is granted, proceed
+        echo json_encode(['message' => 'Welcome admin']);
+    });*/
+
+
+
 
     /**
      * POST API routes

@@ -1,20 +1,25 @@
 <script setup>
 
-import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { reactive, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from "@/stores/auth"
 
 const nav_items = reactive([
     { to: '/', name: 'Planner', class: 'nav-link active', aria_current: 'page' },
-    { to: '/plans', name: 'My Plans', class: 'nav-link', aria_current: '' }
+    { to: '/plans', name: 'My Plans', class: 'nav-link', aria_current: '' },
+    { to: '/admin-panel', name: 'Manage', class: 'nav-link', aria_current: '' }
 ])
 
+const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-function openPage(path) {
+watch(() => route.path, (newPath) => {
     nav_items.forEach(item => {
-        if (item.to === path) {
+        if (
+            (item.to === '/' && newPath === '/') || // exact match for homepage
+            (item.to !== '/' && newPath.startsWith(item.to)) // startsWith for other routes
+        ) {
             item.class = 'nav-link active'
             item.aria_current = 'page'
         } else {
@@ -22,9 +27,7 @@ function openPage(path) {
             item.aria_current = ''
         }
     })
-
-    router.push(path)
-}
+}, { immediate: true })
 
 function handleLogout() {
     authStore.logout()
@@ -35,7 +38,7 @@ function handleLogout() {
 <template>
     <nav class="navbar nav-underline navbar-expand-lg justify-content-end" data-bs-theme="dark">
         <div class="container-fluid">
-            <router-link class="navbar-brand text-white" to="/" @click.prevent="openPage(`/`)">
+            <router-link class="navbar-brand text-white" to="/">
                 <img src="/src/assets/images/ficsit-checkmarktm_64.png" class="img-fluid logo me-1"
                     alt="Logo FICSIT Checkmark">
                 <span class="h5 align-middle">Production Planner</span>
@@ -48,16 +51,16 @@ function handleLogout() {
             <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
                 <ul class="navbar-nav mb-2 mb-lg-0 mx-3 gap-2">
                     <template v-for="nav_item in nav_items">
-                        <li class="nav-item" v-if="nav_item.name !== 'My Plans' || authStore.isAuthenticated">
+                        <li class="nav-item" v-if="(nav_item.name !== 'My Plans' || authStore.isAuthenticated)
+                            && (nav_item.name !== 'Manage' || authStore.user?.role === 'Admin')">
                             <router-link v-bind:class="nav_item.class" v-bind:aria-current="nav_item.aria_current"
-                                v-bind:to="nav_item.to" @click.prevent="openPage(nav_item.to)">
-                                {{ nav_item.name }}
+                                v-bind:to="nav_item.to">{{ nav_item.name }}
                             </router-link>
                         </li>
                     </template>
                 </ul>
                 <div>
-                    <router-link v-if="!authStore.isAuthenticated" type="button" class="btn btn-primary" to="/login" @click.prevent="openPage(`/login`)">
+                    <router-link v-if="!authStore.isAuthenticated" type="button" class="btn btn-primary" to="/login">
                         Log in
                     </router-link>
                     <router-link v-else type="button" class="btn btn-primary" to="/login" @click.prevent="handleLogout">

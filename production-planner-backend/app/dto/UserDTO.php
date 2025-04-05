@@ -3,11 +3,12 @@
 namespace App\DTO;
 
 use App\enums\Role;
+use JsonSerializable;
 
 /**
  * Data Transfer Object (DTO) for representing a user.
  */
-class UserDTO
+class UserDTO implements JsonSerializable
 {
     private string $id;
     private string $email;
@@ -29,6 +30,25 @@ class UserDTO
 
     public function getEmail(): string {
         return $this->email;
+    }
+
+    public function getRole(): Role {
+        return $this->role;
+    }
+
+    /**
+     * Converts the UserDTO object to an associative array.
+     *
+     * @return array An associative array representing the UserDTO object.
+     */
+    private function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'password' => $this->password,
+            'role' => $this->role->value
+        ];
     }
 
     /**
@@ -56,5 +76,10 @@ class UserDTO
     public function verifyPassword(string $password): bool
     {
         return password_verify($password, $this->password);
+    }
+
+    public function jsonSerialize(): array
+    {
+        return self::toArray();
     }
 }

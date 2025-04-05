@@ -24,21 +24,52 @@ const router = createRouter({
     {
       path: '/register',
       name: 'register',
-      component: () => import('../views/RegisterView.vue'),
+      component: () => import('../views/RegisterView.vue')
+    },
+    {
+      path: '/admin-panel',
+      component: () => import('../views/AdminView.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        {
+          path: '',
+          redirect: '/admin-panel/users'
+        },
+        {
+          path: 'users',
+          name: 'adminUsers',
+          component: () => import('../components/AdminUsers.vue')
+        },
+        {
+          path: 'pictures',
+          name: 'adminPictures',
+          component: () => import('../components/AdminPictures.vue')
+        },
+        {
+          path: 'json',
+          name: 'adminJson',
+          component: () => import('../components/AdminJson.vue')
+        }
+      ]
     }
   ],
 })
 
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
+  const user = authStore.user
 
+  // Not logged in? Redirect to login
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Not logged in? Redirect to login
     next({ name: 'login' })
-  } else {
-    // Continue to requested route
-    next()
   }
+
+  // Redirect non-admins to the homepage
+  if (to.meta.requiresAdmin && user?.role !== 'Admin') {
+    return next({ name: 'planner' })
+  }
+
+  next()
 })
 
 export default router
