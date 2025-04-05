@@ -46,7 +46,6 @@ class UserDTO implements JsonSerializable
         return [
             'id' => $this->id,
             'email' => $this->email,
-            'password' => $this->password,
             'role' => $this->role->value
         ];
     }

@@ -13,15 +13,14 @@ require_once(__DIR__ . "/../env.php");
 require_once(__DIR__ . "/../services/populate-db.php");
 
 // require local classes
-use App\Controllers\BaseController;
 use App\Controllers\ItemController;
 use App\Controllers\MachineController;
 use App\Controllers\PlanController;
 use App\Controllers\RecipeController;
+use App\Controllers\UserController;
 use App\enums\Role;
 use App\Services\ErrorReportingService;
 use App\Services\ResponseService;
-use App\Controllers\AuthController;
 
 // require vendor libraries
 use Steampixel\Route;
@@ -41,23 +40,23 @@ try {
      * Auth routes
      */
     Route::add('/api/auth/register', function () {
-        $authController = new AuthController();
-        $authController->register();
+        $userController = new UserController();
+        $userController->register();
     }, 'post');
 
     Route::add('/api/auth/login', function () {
-        $authController = new AuthController();
-        $authController->login();
+        $userController = new UserController();
+        $userController->login();
     }, 'post');
 
     Route::add('/api/auth/me', function () {
-        $authController = new AuthController();
-        $authController->me();
+        $userController = new UserController();
+        $userController->me();
     });
 
     Route::add('/api/auth/is-me/([0-9]*)', function ($id) {
-        $authController = new AuthController();
-        $authController->isMe($id);
+        $userController = new UserController();
+        $userController->isMe($id);
     });
 
     /**
@@ -66,6 +65,38 @@ try {
     Route::pathNotFound(function () {
         ResponseService::Error("route is not defined", 404);
     });
+
+    /**
+     * API routes with admin access only.
+     */
+    // API route for fetching users
+    Route::add('/api/users', function () {
+        $userController = new UserController();
+        $userController->requireRole(Role::ADMIN);
+
+        $userController->getAll();
+    });
+    // API route for creating a user
+    Route::add('/api/users', function () {
+        $userController = new UserController();
+        $userController->requireRole(Role::ADMIN);
+
+        $userController->register();
+    }, 'post');
+    // API route for updating a user by their ID
+    Route::add('/api/users/([0-9]+)', function ($id) {
+        $userController = new UserController();
+        $userController->requireRole(Role::ADMIN);
+
+        $userController->update($id);
+    }, 'put');
+    // API route for deleting a user by their ID
+    Route::add('/api/users/([0-9]+)', function ($id) {
+        $userController = new UserController();
+        $userController->requireRole(Role::ADMIN);
+
+        $userController->delete($id);
+    }, 'delete');
 
     /**
      * GET API routes. All get APIs for collections support pagination with parameters page and limit, e.g. ?page=1&limit=10.
@@ -101,29 +132,13 @@ try {
         $recipeController->getStandardByItem($id);
     });
 
-
-
-
-
-    // TODO: Delete/Edit
-    /*Route::add('/api/admin/stats', function () {
-        $authController = new AuthController();
-        $authController->requireRole(Role::ADMIN);
-
-        // If access is granted, proceed
-        echo json_encode(['message' => 'Welcome admin']);
-    });*/
-
-
-
-
     /**
      * POST API routes
      */
     // API route for creating a production plan
     Route::add('/api/plans', function () {
-        $baseController = new BaseController();
-        $baseController->getAuthenticatedUser();
+        $userController = new UserController();
+        $userController->getAuthenticatedUser();
 
         $planController = new PlanController();
         $planController->create();
@@ -134,8 +149,8 @@ try {
      */
     // API route for updating the production plan by its ID
     Route::add('/api/plans/([0-9]+)', function ($id) {
-        $baseController = new BaseController();
-        $baseController->getAuthenticatedUser();
+        $userController = new UserController();
+        $userController->getAuthenticatedUser();
 
         $planController = new PlanController();
         $planController->update($id);
@@ -146,8 +161,8 @@ try {
      */
     // API route for deleting the production plan by its ID
     Route::add('/api/plans/([0-9]+)', function ($id) {
-        $baseController = new BaseController();
-        $baseController->getAuthenticatedUser();
+        $userController = new UserController();
+        $userController->getAuthenticatedUser();
 
         $planController = new PlanController();
         $planController->delete($id);

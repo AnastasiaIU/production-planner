@@ -12,10 +12,12 @@ use Throwable;
 class PlanController extends BaseController
 {
     private PlanModel $planModel;
+    private UserController $userController;
 
     public function __construct()
     {
         $this->planModel = new PlanModel();
+        $this->userController = new UserController();
     }
 
     /**
@@ -89,7 +91,7 @@ class PlanController extends BaseController
         $data = $this->decodePostData(); // Use base controller method to get POST data
         $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
 
-        $this->validateIsMe($data['created_by']);
+        $this->userController->validateIsMe($data['created_by']);
 
         try {
             $plan = $this->planModel->create($data);
@@ -111,7 +113,7 @@ class PlanController extends BaseController
         $data = $this->decodePostData(); // Use base controller method to get POST data
         $this->validateInput(['created_by', 'display_name', 'items'], $data); // Use base controller validation
 
-        $this->validateIsMe($data['created_by']);
+        $this->userController->validateIsMe($data['created_by']);
 
         try {
             $plan = $this->planModel->update($planId, $data);
@@ -130,10 +132,14 @@ class PlanController extends BaseController
      */
     public function delete(string $planId): void
     {
-        $plan = $this->planModel->get($planId);
-        $this->validateIsMe($plan->getCreatedBy());
+        try {
+            $plan = $this->planModel->get($planId);
+            $this->userController->validateIsMe($plan->getCreatedBy());
 
-        $this->planModel->delete($planId);
-        ResponseService::Send(true);
+            $this->planModel->delete($planId);
+            ResponseService::Send(true);
+        } catch (Throwable $th) {
+            ResponseService::Error('Server error: ' . $th->getMessage());
+        }
     }
 }
