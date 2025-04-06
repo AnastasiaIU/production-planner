@@ -3,7 +3,7 @@
 import { useAuthStore } from "@/stores/auth"
 import { useRouter } from 'vue-router'
 import { useProdPlanStore } from "@/stores/productionPlan"
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -24,9 +24,10 @@ onMounted(async () => {
     modal.addEventListener('hide.bs.modal', () => {
         prodPlanStore.currentPlan = null
     })
-})
 
-onBeforeUnmount(() => {
+    await nextTick()
+
+    console.log(prodPlanStore.plans.length)
 })
 
 async function handleSubmittion() {
@@ -144,7 +145,7 @@ function importPlan() {
             </div>
         </div>
         <div class="d-flex flex-wrap gap-3 justify-content-between p-3 w-100">
-            <div v-if="!prodPlanStore.plans" class="alert alert-light m-0" role="alert">No plans found.</div>
+            <div v-if="prodPlanStore.plans == 0" class="alert alert-light mb-0 mx-auto" role="alert">No plans found.</div>
             <div v-else v-for="plan in prodPlanStore.plans" id="plansList"
                 class="card d-flex flex-row flex-wrap gap-2 justify-content-between p-2 w-100">
                 <div class="d-flex">
