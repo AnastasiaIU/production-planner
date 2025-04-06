@@ -39,7 +39,7 @@ const router = createRouter({
           path: 'users',
           name: 'adminUsers',
           component: () => import('../components/AdminUsers.vue')
-        },
+        }/*,
         {
           path: 'pictures',
           name: 'adminPictures',
@@ -49,7 +49,7 @@ const router = createRouter({
           path: 'json',
           name: 'adminJson',
           component: () => import('../components/AdminJson.vue')
-        }
+        }*/
       ]
     }
   ],

@@ -81,7 +81,7 @@ try {
         $userController = new UserController();
         $userController->requireRole(Role::ADMIN);
 
-        $userController->register();
+        $userController->create();
     }, 'post');
     // API route for updating a user by their ID
     Route::add('/api/users/([0-9]+)', function ($id) {

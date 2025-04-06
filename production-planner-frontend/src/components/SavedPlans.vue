@@ -34,26 +34,28 @@ async function handleSubmittion() {
         await prodPlanStore.remove(prodPlanStore.currentPlan.id)
 
         toastMessage.value = 'Plan deleted successfully!'
-        isError.value = false
+        displayToast(false)
 
     } catch (error) {
         console.error('An error occurred:', error)
 
-        isError.value = true
         toastMessage.value = 'An error occurred while deleting the plan.'
+        displayToast(true)
 
     } finally {
         const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'))
         modal?.hide()
-
-        showToast.value = true
-
-        setTimeout(() => {
-            showToast.value = false
-            isError.value = false
-            toastMessage.value = ''
-        }, 3000)
     }
+}
+
+function displayToast(showError) {
+    isError.value = showError
+    showToast.value = true
+    setTimeout(() => {
+        showToast.value = false
+        isError.value = false
+        toastMessage.value = ''
+    }, 3000)
 }
 
 function viewPlan(plan) {
@@ -117,14 +119,8 @@ function importPlan() {
 
                 } catch (error) {
                     console.error('An error occurred:', error)
-                    isError.value = true
                     toastMessage.value = 'Invalid Invalid JSON structure. Please upload a valid JSON file.'
-                    showToast.value = true
-                    setTimeout(() => {
-                        showToast.value = false
-                        isError.value = false
-                        toastMessage.value = ''
-                    }, 3000)
+                    displayToast(true)
                 }
             }
 

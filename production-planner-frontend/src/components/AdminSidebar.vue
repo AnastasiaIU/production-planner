@@ -17,7 +17,7 @@ const route = useRoute()
                             Users
                         </router-link>
                     </li>
-                    <li class="nav-item">
+                    <!--<li class="nav-item">
                         <router-link
                             :class="['nav-link', 'd-flex', 'align-items-center', 'gap-2', route.path === '/admin-panel/pictures' ? 'active' : '']"
                             to="/admin-panel/pictures" :aria-current="route.path === '/admin-panel/pictures' ? 'page' : ''">
@@ -30,7 +30,7 @@ const route = useRoute()
                             to="/admin-panel/json" :aria-current="route.path === '/admin-panel/json' ? 'page' : ''">
                             JSON
                         </router-link>
-                    </li>
+                    </li>-->
                 </ul>
             </div>
         </div>

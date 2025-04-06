@@ -12,12 +12,12 @@ export const useProdPlanStore = defineStore('pinia-production-plan', () => {
     }
 
     async function fetchAll(userId) {
-        const response = await axios.get(API_ENDPOINTS.getProdPlans(userId))
+        const response = await axios.get(API_ENDPOINTS.getProdPlansForUser(userId))
         plans.value = response.data
     }
 
     async function fetchOne(planId) {
-        const response = await axios.get(API_ENDPOINTS.getProdPlan(planId))
+        const response = await axios.get(API_ENDPOINTS.rudProdPlan(planId))
         currentPlan.value = response.data
     }
 
@@ -28,14 +28,14 @@ export const useProdPlanStore = defineStore('pinia-production-plan', () => {
     }
 
     async function update(planId, planData) {
-        const response = await axios.put(API_ENDPOINTS.updateProdPlan(planId), planData)
+        const response = await axios.put(API_ENDPOINTS.rudProdPlan(planId), planData)
         const index = plans.value.findIndex(p => p.id === planId)
         if (index !== -1) plans.value[index] = response.data
         return response
     }
 
     async function remove(planId) {
-        await axios.delete(API_ENDPOINTS.deleteProdPlan(planId))
+        await axios.delete(API_ENDPOINTS.rudProdPlan(planId))
         plans.value = plans.value.filter(p => p.id !== planId)
         currentPlan.value = null
     }

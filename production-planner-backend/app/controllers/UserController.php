@@ -42,13 +42,44 @@ class UserController extends BaseController
 
             // create user
             $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
-            $role = isset($data['role']) ? Role::from($data['role']) : Role::REGULAR; // Default to 'Regular' if role is not provided
-            $this->userModel->create($data['email'], $hashedPassword, $role);
+            $this->userModel->create($data['email'], $hashedPassword, Role::REGULAR);
+
             ResponseService::Send(['message' => 'User registered successfully']);
             return;
         } catch (Throwable $th) {
             error_log($th->getMessage());
             ResponseService::Error('Registration failed');
+            return;
+        }
+    }
+
+    /**
+     * Handles user creation.
+     */
+    public function create(): void
+    {
+        $data = $this->decodePostData(); // Use base controller method to get POST data
+        $this->validateInput(['email', 'password', 'role'], $data); // Use base controller validation
+
+        try {
+            $this->validateEmail($data['email']);
+
+            // Check if email already exists
+            if ($this->userModel->findByEmail($data['email'])) {
+                ResponseService::Error('Email already exists', 400);
+                return;
+            }
+
+            // create user
+            $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+            $role = Role::from($data['role']);
+            $user = $this->userModel->create($data['email'], $hashedPassword, $role);
+
+            ResponseService::Send($user);
+            return;
+        } catch (Throwable $th) {
+            error_log($th->getMessage());
+            ResponseService::Error('User creation failed');
             return;
         }
     }
@@ -235,6 +266,15 @@ class UserController extends BaseController
 
         try {
             $this->validateEmail($data['email']);
+
+            $userByEmail = $this->userModel->findByEmail($data['email']);
+            $userById = $this->userModel->findById($userId);
+
+            // Check if email already exists
+            if ($userByEmail && $userById->getEmail() !== $data['email']) {
+                ResponseService::Error('Email already exists', 400);
+                return;
+            }
 
             if (isset($data['password'])) {
                 $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
