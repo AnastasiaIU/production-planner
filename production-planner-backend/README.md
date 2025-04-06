@@ -4,8 +4,6 @@ PHP REST API using MVC structure, with Docker, MariaDB, and PHPMyAdmin.
 
 ## Setup
 
-- Start local
-
 In a terminal run:
 
 ```bash
